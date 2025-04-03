@@ -402,7 +402,7 @@ const BoostExperiment = ({ originalResults, query, API_URL = DEFAULT_API_URL, on
           originalQuery: query,
           sources: ['semanticScholar', 'scholar', 'ads'],
           metrics: ['ndcg@10', 'precision@10', 'recall@10'],
-          fields: ['title', 'abstract', 'authors', 'doi', 'year', 'citation_count', 'doctype', 'property'],
+          fields: ['title', 'abstract', 'authors', 'year', 'citation_count', 'doctype'],
           max_results: 20,
           useTransformedQuery: true,
           boost_config: {
