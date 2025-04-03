@@ -165,8 +165,17 @@ function App() {
       const selectedSources = Object.keys(sources).filter(key => sources[key]);
       const selectedMetrics = Object.keys(metrics).filter(key => metrics[key]);
       
-      // Always include all fields since we removed the fields selection UI
-      const selectedFields = ['title', 'abstract', 'authors', 'doi', 'year', 'citation_count'];
+      // Include all necessary fields for consistency with handleRunNewSearchWithWeights
+      const selectedFields = [
+        'title', 
+        'abstract', 
+        'authors', 
+        'doi', 
+        'year', 
+        'citation_count', 
+        'doctype',
+        'property'
+      ];
       
       const requestBody = {
         query,
@@ -290,8 +299,17 @@ function App() {
       const selectedSources = Object.keys(sources).filter(key => sources[key]);
       const selectedMetrics = Object.keys(metrics).filter(key => metrics[key]);
       
-      // Always include all fields since we removed the fields selection UI
-      const selectedFields = ['title', 'abstract', 'authors', 'doi', 'year', 'citation_count'];
+      // Include all necessary fields for boost experiments
+      const selectedFields = [
+        'title', 
+        'abstract', 
+        'authors', 
+        'doi', 
+        'year', 
+        'citation_count', 
+        'doctype',
+        'property'
+      ];
       
       // Clean the transformedQuery to make sure it doesn't get too complex on repeated applications
       let cleanQuery = transformedQuery;
