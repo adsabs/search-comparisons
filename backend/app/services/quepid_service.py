@@ -232,6 +232,55 @@ async def load_case_with_judgments(case_id: int) -> Optional[QuepidCase]:
         return None
 
 
+def get_judgment_titles_from_case(case: QuepidCase) -> Dict[str, Dict[str, str]]:
+    """
+    Extract titles from judgments in a Quepid case, organized by query and document ID.
+    
+    This function extracts the title metadata from all judgments in a case and
+    organizes them in a nested dictionary structure for easy lookup.
+    
+    Args:
+        case: A QuepidCase object containing judgments
+    
+    Returns:
+        Dict[str, Dict[str, str]]: A dictionary with query text as the outer key,
+            doc_id as the inner key, and title as the value
+    """
+    titles = {}
+    
+    for query, judgments in case.judgments.items():
+        titles[query] = {}
+        
+        for judgment in judgments:
+            if "title" in judgment.metadata:
+                titles[query][judgment.doc_id] = judgment.metadata["title"]
+    
+    return titles
+
+
+def get_flat_judgment_titles_from_case(case: QuepidCase) -> Dict[str, str]:
+    """
+    Extract titles from judgments in a Quepid case as a flat dictionary.
+    
+    This function extracts the title metadata from all judgments and creates
+    a single-level dictionary mapping document IDs to titles, regardless of query.
+    
+    Args:
+        case: A QuepidCase object containing judgments
+    
+    Returns:
+        Dict[str, str]: A dictionary with doc_id as key and title as value
+    """
+    titles = {}
+    
+    for judgments in case.judgments.values():
+        for judgment in judgments:
+            if "title" in judgment.metadata:
+                titles[judgment.doc_id] = judgment.metadata["title"]
+    
+    return titles
+
+
 async def evaluate_search_results(
     query: str,
     search_results: List[SearchResult],

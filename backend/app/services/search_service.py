@@ -506,12 +506,26 @@ def compare_results(
                     
                     # Also calculate field-specific Jaccard similarities
                     for field in fields:
-                        # Extract values from results
-                        values1 = set(getattr(r, field, "") or "" for r in results1)
-                        values1 = {str(v).lower().strip() for v in values1 if v}
+                        # Extract values from results, handling lists specially
+                        values1 = set()
+                        for r in results1:
+                            val = getattr(r, field, "")
+                            if val:
+                                if isinstance(val, list):
+                                    # Convert list to tuple (which is hashable) for authors and other list fields
+                                    values1.add(tuple(str(v).lower().strip() for v in val if v))
+                                else:
+                                    values1.add(str(val).lower().strip())
                         
-                        values2 = set(getattr(r, field, "") or "" for r in results2)
-                        values2 = {str(v).lower().strip() for v in values2 if v}
+                        values2 = set()
+                        for r in results2:
+                            val = getattr(r, field, "")
+                            if val:
+                                if isinstance(val, list):
+                                    # Convert list to tuple (which is hashable) for authors and other list fields
+                                    values2.add(tuple(str(v).lower().strip() for v in val if v))
+                                else:
+                                    values2.add(str(val).lower().strip())
                         
                         # Calculate Jaccard similarity for this field
                         field_sim = calculate_jaccard_similarity(values1, values2)
