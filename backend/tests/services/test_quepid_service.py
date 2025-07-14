@@ -4,11 +4,10 @@ Tests for the Quepid API service module.
 This module contains tests for the Quepid API service, which integrates
 with Quepid to evaluate search results using relevance judgments.
 """
-import json
 import math
-from typing import Dict, List, Any, Optional, TYPE_CHECKING
+from typing import Dict, List, Any, TYPE_CHECKING
 import pytest
-from unittest.mock import MagicMock, patch, AsyncMock, Mock
+from unittest.mock import MagicMock, AsyncMock
 from httpx import HTTPError
 
 from app.services.quepid_service import (
@@ -24,11 +23,7 @@ from app.services.quepid_service import (
 from app.api.models import SearchResult
 
 if TYPE_CHECKING:
-    from _pytest.capture import CaptureFixture
-    from _pytest.fixtures import FixtureRequest
-    from _pytest.logging import LogCaptureFixture
     from _pytest.monkeypatch import MonkeyPatch
-    from pytest_mock.plugin import MockerFixture
 
 
 @pytest.fixture(autouse=True)

@@ -4,18 +4,15 @@ Tests for the ADS service module of the search-comparisons application.
 This module tests the functionality of the ADS service for retrieving search results
 using the official ADS API.
 """
-import os
 import json
-from typing import Dict, List, Any, Optional, cast, TYPE_CHECKING
-from unittest.mock import MagicMock, patch, AsyncMock
+from typing import Dict, Any, TYPE_CHECKING
+from unittest.mock import patch
 
 import pytest
-import pytest_asyncio
 import httpx
 from httpx import Response
 
 from app.services.ads_service import (
-    get_ads_api_key,
     get_ads_results,
     _get_default_fields,
     _get_sort_parameter,
@@ -23,10 +20,8 @@ from app.services.ads_service import (
     _create_search_result
 )
 from app.api.models import SearchResult
-from app.utils.cache import get_cache_key
 
 if TYPE_CHECKING:
-    from _pytest.fixtures import FixtureRequest
     from _pytest.logging import LogCaptureFixture
     from pytest_mock.plugin import MockerFixture
 

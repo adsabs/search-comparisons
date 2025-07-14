@@ -9,14 +9,11 @@ import os
 from typing import Dict, Any
 from pathlib import Path
 from dotenv import load_dotenv
-import math
-from datetime import datetime
 
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
-from starlette.middleware.sessions import SessionMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
@@ -30,7 +27,6 @@ from .routes.quepid import router as quepid_router
 from .routes.judgement import router as judgement_router
 from .api.models import ErrorResponse
 from .core.init_db import init_db
-from .core.config import settings
 
 # Initialize rate limiter
 limiter = Limiter(key_func=get_remote_address)
@@ -38,7 +34,6 @@ limiter = Limiter(key_func=get_remote_address)
 # Set up platform-specific fixes and environment variables first
 # Apply macOS SSL certificate handling fix if needed
 if os.name == 'posix' and 'darwin' in os.uname().sysname.lower():
-    import ssl
     import certifi
     os.environ['SSL_CERT_FILE'] = certifi.where()
 
@@ -170,12 +165,7 @@ app.add_middleware(
     allowed_hosts=["*"]  # Configure this based on your domains
 )
 
-# Add session middleware
-app.add_middleware(
-    SessionMiddleware,
-    secret_key=settings.SECRET_KEY,
-    session_cookie="search_comparisons_session"
-)
+
 
 
 @app.exception_handler(Exception)

@@ -1,9 +1,8 @@
 """API routes for judgement operations."""
 
 from typing import List
-from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
 
 from app.api.schemas.judgement import (
@@ -14,7 +13,7 @@ from app.api.schemas.judgement import (
 )
 from app.core.database import get_db
 from app.services.judgement_service import JudgementService
-from app.services.session_service import get_current_rater_id
+from uuid import uuid4
 
 router = APIRouter(prefix="/judgements", tags=["judgements"])
 
@@ -51,7 +50,7 @@ async def create_judgement(
     Returns:
         JudgementResponse: The created judgement.
     """
-    rater_id = get_current_rater_id(request)
+    rater_id = uuid4()  # Generate a new UUID for each request
     service = JudgementService(db)
     return service.create_judgement(
         rater_id=rater_id,
@@ -82,7 +81,7 @@ async def create_judgements_batch(
     Returns:
         List[JudgementResponse]: List of created judgements.
     """
-    rater_id = get_current_rater_id(request)
+    rater_id = uuid4()  # Generate a new UUID for each request
     service = JudgementService(db)
     created_judgements = []
     
@@ -155,6 +154,6 @@ async def get_my_judgements(
     Returns:
         List[JudgementResponse]: List of judgements made by the rater.
     """
-    rater_id = get_current_rater_id(request)
+    rater_id = uuid4()  # Generate a new UUID for each request
     service = JudgementService(db)
     return service.get_judgements_by_rater(rater_id) 

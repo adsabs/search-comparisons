@@ -43,6 +43,7 @@ class BoostConfig(BaseModel):
         reference_year: Reference year for recency calculations (optional)
         doctype_boosts: Dictionary mapping document types to boost factors
         field_boosts: Dictionary mapping field names to boost factors
+        collection_boosts: Dictionary mapping collection types to boost multipliers
         adsQueryFields: Dictionary mapping ADS query fields to weights (e.g., "title^0.8 author^0.6")
     """
     name: Optional[str] = "Default Boost Config"
@@ -52,6 +53,7 @@ class BoostConfig(BaseModel):
     reference_year: Optional[int] = None
     doctype_boosts: Dict[str, float] = Field(default_factory=dict)
     field_boosts: Dict[str, float] = Field(default_factory=dict)
+    collection_boosts: Dict[str, float] = Field(default_factory=dict)
     adsQueryFields: Optional[Dict[str, float]] = None
 
 
@@ -62,12 +64,16 @@ class BoostFactors(BaseModel):
         cite_boost: Boost from citation count
         recency_boost: Boost from publication year
         doctype_boost: Boost from document type
+        collection_boost: Boost from collection type
         refereed_boost: Boost from refereed status
+        field_boost: Boost from field value matching
     """
     cite_boost: float = 0.0
     recency_boost: float = 0.0
     doctype_boost: float = 0.0
+    collection_boost: float = 0.0
     refereed_boost: float = 0.0
+    field_boost: float = 0.0
 
 
 class BoostResult(BaseModel):
@@ -108,6 +114,8 @@ class SearchResult(BaseModel):
         citation_count: Number of citations
         doctype: Document type
         property: List of properties
+        collection: Database/collection type (e.g., 'astronomy', 'physics', 'earthscience', 'general')
+        pubdate: Publication date string
         boosted_score: Score after applying boosts
         original_score: Original score before boosts
         original_rank: Original rank before boosts
@@ -127,6 +135,8 @@ class SearchResult(BaseModel):
     citation_count: Optional[int] = None
     doctype: Optional[str] = None
     property: Optional[List[str]] = None
+    collection: Optional[str] = None
+    pubdate: Optional[str] = None
     boosted_score: Optional[float] = None
     original_score: Optional[float] = None
     original_rank: Optional[int] = None

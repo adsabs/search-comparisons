@@ -4,15 +4,14 @@ Query Intent API routes.
 This module provides API endpoints for query intent interpretation and transformation.
 """
 import logging
-from typing import Dict, Any, List, Optional
-from fastapi import APIRouter, HTTPException, Depends, Request, Body
+from typing import Dict, Any, Optional
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from app.services.query_intent.service import QueryIntentService
 from app.services.query_intent.llm_service import LLMService
-from app.services.query_intent.cache_service import CacheService
+from app.services.unified_cache_service import UnifiedCacheService
 from app.services.query_intent.documentation_service import DocumentationService
-from app.core.config import settings
 
 # Configure logger for this module
 logger = logging.getLogger(__name__)
@@ -27,7 +26,7 @@ router = APIRouter(
 # Initialize services
 docs_service = DocumentationService()
 llm_service = LLMService.from_config()
-cache_service = CacheService(max_size=1000, ttl=3600)
+cache_service = UnifiedCacheService()
 query_intent_service = QueryIntentService()
 
 class QueryRequest(BaseModel):

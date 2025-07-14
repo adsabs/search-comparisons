@@ -6,11 +6,9 @@ a timeout context manager and a safe API request function with proper
 error handling and retry logic.
 """
 import signal
-import time
 import logging
 import random
-from contextlib import contextmanager
-from typing import Any, Dict, Optional, Union, Callable, TypeVar, cast
+from typing import Any, Dict, TypeVar
 
 import httpx
 

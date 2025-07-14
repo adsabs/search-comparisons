@@ -3,24 +3,17 @@ Tests for experiment routes.
 
 This module contains tests for the experiment-related API endpoints.
 """
-import json
-from typing import Dict, Any, List, Optional, TYPE_CHECKING
+from typing import List, TYPE_CHECKING
 import pytest
 from fastapi.testclient import TestClient
 
-from app.api.models import SearchResult, SearchRequest
+from app.api.models import SearchResult
 from app.api.routes.experiment_routes import (
     apply_experimental_boost,
-    calculate_boost_stats,
-    BoostConfig,
-    BoostResult
+    calculate_boost_stats
 )
 
 if TYPE_CHECKING:
-    from _pytest.capture import CaptureFixture
-    from _pytest.fixtures import FixtureRequest
-    from _pytest.logging import LogCaptureFixture
-    from _pytest.monkeypatch import MonkeyPatch
     from pytest_mock.plugin import MockerFixture
 
 

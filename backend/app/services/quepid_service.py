@@ -10,7 +10,7 @@ import logging
 import json
 import math
 import re
-from typing import Dict, List, Any, Optional, Tuple, Union
+from typing import Dict, List, Any, Optional, Union
 from urllib.parse import urljoin
 
 import httpx

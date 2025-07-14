@@ -6,7 +6,7 @@ including citation count, publication recency, document type, and refereed statu
 The boost factors are combined using a weighted sum approach.
 """
 import logging
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List, Dict, Any, Optional
 from datetime import datetime
 from copy import deepcopy
 import math
@@ -19,9 +19,10 @@ logger = logging.getLogger(__name__)
 
 # Default weights for boost combination
 DEFAULT_BOOST_WEIGHTS = {
-    'citation': 0.4,
+    'citation': 0.3,
     'recency': 0.3,
     'doctype': 0.2,
+    'collection': 0.1,
     'refereed': 0.1
 }
 
@@ -164,6 +165,37 @@ def calculate_refereed_boost(is_refereed: bool) -> float:
     """
     return 1.0 if is_refereed else 0.0
 
+def calculate_collection_boost(collection: str, collection_boosts: Dict[str, float]) -> float:
+    """
+    Calculate collection boost based on numerical multipliers.
+    
+    Args:
+        collection: Collection name(s) (e.g., 'astronomy', 'physics', 'earthscience,astronomy', 'general')
+        collection_boosts: Dictionary mapping collections to boost multipliers
+        
+    Returns:
+        float: Boost multiplier (0.0 = ignore/filter out, 1.0 = normal, >1.0 = boost)
+    """
+    if not collection or not collection_boosts:
+        return 1.0
+    
+    # Handle multiple collections separated by comma
+    collections = [c.strip().lower() for c in collection.split(',')]
+    
+    # If any collection has 0 boost, filter out the entire record
+    for coll in collections:
+        boost = collection_boosts.get(coll, 1.0)
+        if boost == 0.0:
+            return 0.0
+    
+    # Calculate boost for each collection and return the maximum
+    max_boost = 1.0
+    for coll in collections:
+        boost = collection_boosts.get(coll, 1.0)
+        max_boost = max(max_boost, boost)
+    
+    return max_boost
+
 def combine_boost_factors(
     boosts: Dict[str, float],
     weights: Dict[str, float] = None,
@@ -264,6 +296,7 @@ async def apply_all_boosts(
         recency_multiplier = boost_config.get('recency_multiplier', 1.0)
         doctype_boosts = boost_config.get('doctype_boosts', {})
         field_boosts = boost_config.get('field_boosts', {})
+        collection_boosts = boost_config.get('collection_boosts', {})
         combination_method = boost_config.get('boost_combination_method', 'weighted_sum')
         boost_weights = boost_config.get('boost_weights', DEFAULT_BOOST_WEIGHTS)
 
@@ -278,6 +311,7 @@ async def apply_all_boosts(
                 'citation': 0.0,
                 'recency': 0.0,
                 'doctype': 0.0,
+                'collection': 0.0,
                 'refereed': 0.0,
                 'field': 0.0
             }
@@ -318,25 +352,56 @@ async def apply_all_boosts(
                 boosts['doctype'] = base_boost
                 result.boost_factors['doctype'] = boosts['doctype']
             
+            # Collection boost
+            base_boost = calculate_collection_boost(
+                result.collection,
+                collection_boosts
+            )
+            boosts['collection'] = base_boost
+            result.boost_factors['collection'] = boosts['collection']
+            
+            # Debug logging for collection boost
+            if collection_boosts:
+                logger.info(f"Collection boost for {result.title[:50]}...: collection={result.collection}, boost={base_boost}")
+            
             # Field boost
             if field_boosts:
+                logger.info(f"Processing field_boosts: {field_boosts}")
                 field_boost = 0.0
                 for field, weight in field_boosts.items():
                     if weight > 0:
-                        # Get the field value from the result
-                        field_value = getattr(result, field, None)
-                        if field_value:
-                            # For numeric fields, use the value directly
-                            if isinstance(field_value, (int, float)):
-                                field_boost += weight * field_value
-                            # For string fields, use length as a proxy for relevance
-                            elif isinstance(field_value, str):
-                                field_boost += weight * len(field_value)
-                            # For list fields, use length as a proxy for relevance
-                            elif isinstance(field_value, list):
-                                field_boost += weight * len(field_value)
+                        # Check if this is a field value boost (e.g., "earthscience" for database/collection field)
+                        if field in ['earthscience', 'astronomy', 'physics', 'general']:
+                            # This is a collection/database value boost
+                            logger.info(f"Checking collection boost: field={field}, result.collection={result.collection}, weight={weight}")
+                            if result.collection:
+                                # Handle multiple collections separated by comma
+                                collections = [c.strip().lower() for c in result.collection.split(',')]
+                                if field.lower() in collections:
+                                    field_boost += weight
+                                    logger.info(f"Applied collection boost: {weight} for {field}")
+                                else:
+                                    logger.info(f"No collection boost applied: field '{field}' not in collections {collections}")
+                        elif field in ['article', 'thesis', 'inproceedings', 'book', 'abstract', 'eprint', 'inbook', 'bookreview', 'catalog', 'circular', 'erratum', 'mastersthesis', 'newsletter', 'obituary', 'phdthesis', 'pressrelease', 'proceedings', 'proposal', 'software', 'talk', 'techreport']:
+                            # This is a doctype value boost
+                            if result.doctype and result.doctype.lower() == field.lower():
+                                field_boost += weight
+                        else:
+                            # Original field boost logic - boost based on field content
+                            field_value = getattr(result, field, None)
+                            if field_value:
+                                # For numeric fields, use the value directly
+                                if isinstance(field_value, (int, float)):
+                                    field_boost += weight * field_value
+                                # For string fields, use length as a proxy for relevance
+                                elif isinstance(field_value, str):
+                                    field_boost += weight * len(field_value)
+                                # For list fields, use length as a proxy for relevance
+                                elif isinstance(field_value, list):
+                                    field_boost += weight * len(field_value)
                 boosts['field'] = field_boost
-                result.boost_factors['field'] = boosts['field']
+                result.boost_factors['field'] = field_boost
+                logger.info(f"Final field_boost for {result.title[:30]}...: {field_boost}")
             
             # Refereed boost
             if boost_config.get('refereed_boost', 0.0) > 0:
@@ -345,6 +410,13 @@ async def apply_all_boosts(
                 ) * boost_config['refereed_boost']
                 result.boost_factors['refereed'] = boosts['refereed']
             
+            # Check if collection boost is 0.0 (filter out)
+            if collection_boosts and boosts.get('collection', 1.0) == 0.0:
+                # Mark this result for filtering by setting score to 0
+                result._score = 0.0
+                result.boosted_score = 0.0
+                continue
+            
             # Combine boost factors using the specified method
             final_boost = combine_boost_factors(
                 boosts, 
@@ -352,17 +424,24 @@ async def apply_all_boosts(
                 combination_method
             )
             
+            # Debug logging for final boost calculation
+            if collection_boosts:
+                logger.info(f"Final boost for {result.title[:50]}...: boosts={boosts}, final_boost={final_boost}, original_score={result.original_score}, new_score={result.original_score * math.exp(final_boost)}")
+            
             # Apply final boost to score
             result._score *= math.exp(final_boost)
             result.boosted_score = result._score
         
+        # Filter out results with 0.0 score (collection boost = 0.0)
+        filtered_results = [r for r in boosted_results if r._score > 0.0]
+        
         # Sort by boosted score and update ranks
-        boosted_results.sort(key=lambda x: x._score, reverse=True)
-        for i, result in enumerate(boosted_results):
+        filtered_results.sort(key=lambda x: x._score, reverse=True)
+        for i, result in enumerate(filtered_results):
             result.rank = i + 1
             result.rank_change = result.original_rank - result.rank
         
-        return boosted_results
+        return filtered_results
         
     except Exception as e:
         logger.error(f"Error applying boosts: {str(e)}", exc_info=True)

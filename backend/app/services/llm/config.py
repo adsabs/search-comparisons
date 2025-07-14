@@ -6,7 +6,7 @@ LLMs for query transformation in the search-comparisons application.
 """
 import os
 from enum import Enum
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 
 # Default model settings
 DEFAULT_MODEL = "llama2-chat"

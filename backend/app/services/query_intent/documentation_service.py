@@ -156,4 +156,15 @@ class DocumentationService:
             
         except Exception as e:
             logger.error(f"Error creating vector store: {str(e)}")
-            raise 
+            raise
+
+    def retrieve_relevant_docs(self, query: str) -> list[str]:
+        """
+        Stub for retrieving relevant documentation for a query.
+        Returns an empty list for now.
+        Args:
+            query: The query string to find relevant docs for.
+        Returns:
+            list[str]: An empty list (stub implementation).
+        """
+        return [] 

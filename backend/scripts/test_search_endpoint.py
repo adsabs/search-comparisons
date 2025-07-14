@@ -8,7 +8,6 @@ import asyncio
 import os
 import sys
 import json
-from typing import Dict, Any
 import logging
 from dotenv import load_dotenv
 import httpx

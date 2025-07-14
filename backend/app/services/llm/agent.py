@@ -7,10 +7,10 @@ user queries into more effective astronomy search queries using LLM-based intent
 import logging
 import datetime
 import re
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, Any, List, Optional
 
 from .llm_service import LLMService
-from .config import ADS_SEARCH_FIELDS, ADS_SEARCH_OPERATORS, ASTRONOMY_TERMS, QUERY_INTENTS
+from .config import ADS_SEARCH_FIELDS, ADS_SEARCH_OPERATORS, QUERY_INTENTS
 
 # Configure logger for this module
 logger = logging.getLogger(__name__)

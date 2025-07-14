@@ -5,7 +5,7 @@ This module contains tests for:
 2. Applying citation, recency, and doctype boosts
 3. Combining all boost types together
 """
-from typing import Dict, List, Set, Tuple, Optional, Any
+from typing import Dict, List, Any
 from itertools import combinations
 from datetime import datetime
 import pytest

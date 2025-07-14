@@ -6,7 +6,6 @@ searching for publications and retrieving bibliographic information.
 """
 import os
 import logging
-import time
 import random
 import asyncio
 from typing import List, Dict, Any, Optional
@@ -15,7 +14,7 @@ import httpx
 
 from ..api.models import SearchResult
 from ..utils.http import safe_api_request
-from ..utils.cache import get_cache_key, save_to_cache, load_from_cache
+from .unified_cache_service import get_cache_service
 
 # Setup logging
 logger = logging.getLogger(__name__)
@@ -71,8 +70,9 @@ async def get_semantic_scholar_results(
         List[SearchResult]: List of search results from Semantic Scholar
     """
     # Check cache first - now using the shared cache mechanism
-    cache_key = get_cache_key("semanticScholar", query, fields, num_results)
-    cached_results = load_from_cache(cache_key)
+    cache_service = get_cache_service()
+    cache_key = cache_service.get_cache_key("semanticScholar", query, fields, num_results)
+    cached_results = cache_service.get(cache_key)
     
     if cached_results is not None:
         logger.info(f"Retrieved {len(cached_results)} Semantic Scholar results from cache")
@@ -185,7 +185,7 @@ async def get_semantic_scholar_results(
                 # Save to cache and return if we have results
                 if results:
                     logger.info(f"Retrieved {len(results)} results from Semantic Scholar")
-                    save_to_cache(cache_key, results)
+                    cache_service.set(cache_key, results)
                     return results
                 
                 # No results found after successful request
@@ -217,7 +217,7 @@ async def get_semantic_scholar_results(
     results = [placeholder]
     
     # Save to cache
-    save_to_cache(cache_key, results)
+    cache_service.set(cache_key, results)
     return results
 
 

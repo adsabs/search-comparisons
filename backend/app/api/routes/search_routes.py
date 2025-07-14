@@ -6,11 +6,11 @@ including the main comparison endpoint that handles searching across
 multiple engines and computing similarity metrics.
 """
 import logging
-from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
-from typing import Dict, List, Any, Optional
+from fastapi import APIRouter, HTTPException, BackgroundTasks
+from typing import Dict, Any, Optional
 from pydantic import BaseModel
 
-from ...api.models import SearchRequest, SearchResult, SearchResponse, SearchRequestWithBoosts, BoostConfig
+from ...api.models import SearchRequest, SearchResponse, SearchRequestWithBoosts, BoostConfig
 from ...services.search_service import get_results_with_fallback, compare_results, SearchService
 from ...services.query_transformation import transform_query_with_boosts
 from ...services.boost_service import apply_all_boosts

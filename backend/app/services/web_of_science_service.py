@@ -6,12 +6,11 @@ searching for publications and retrieving bibliographic information.
 """
 import os
 import logging
-from typing import List, Dict, Any, Optional, Union
+from typing import List, Dict, Any, Optional
 
 import httpx
 
 from ..api.models import SearchResult
-from ..utils.http import safe_api_request
 
 # Setup logging
 logger = logging.getLogger(__name__)

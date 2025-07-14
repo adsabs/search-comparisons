@@ -6,8 +6,7 @@ import {
   IconButton, AppBar, Toolbar, TableContainer, Table,
   TableHead, TableBody, TableRow, TableCell, Chip,
   List, ListItem, ListItemAvatar, ListItemText, ListItemSecondaryAction,
-  Avatar, Tooltip, Accordion, AccordionSummary, AccordionDetails,
-  Menu, MenuItem
+  Avatar, Tooltip, Accordion, AccordionSummary, AccordionDetails
 } from '@mui/material';
 import InfoIcon from '@mui/icons-material/Info';
 import ScienceIcon from '@mui/icons-material/Science';
@@ -15,18 +14,13 @@ import SearchIcon from '@mui/icons-material/Search';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import LaunchIcon from '@mui/icons-material/Launch';
 import AssessmentIcon from '@mui/icons-material/Assessment';
-import AccountCircleIcon from '@mui/icons-material/AccountCircle';
-import ExitToAppIcon from '@mui/icons-material/ExitToApp';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 
 import { searchService, experimentService } from './services/api';
 import BoostExperiment from './components/BoostExperiment';
 import SimilarityTests from './components/SimilarityTests';
 import QueryIntent from './components/QueryIntent';
-import Login from './components/Login';
-import ProtectedRoute from './components/ProtectedRoute';
 import StableInput from './components/StableInput';
-import { useAuth, DEFAULT_PASSWORD } from './contexts/AuthContext';
 import JudgementsDatabase from './components/JudgementsDatabase';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
@@ -38,13 +32,7 @@ const APP_VERSION = "1.0.0";
  * @returns {React.ReactElement} The main application component
  */
 function App() {
-  // Authentication state
-  const { isAuthenticated, login, logout } = useAuth();
   const navigate = useNavigate();
-  
-  // User menu state
-  const [anchorEl, setAnchorEl] = useState(null);
-  const openMenu = Boolean(anchorEl);
   
   // State for search query and options
   const [query, setQuery] = useState('');
@@ -96,22 +84,7 @@ function App() {
   // Active source for detailed results
   const [activeSource, setActiveSource] = useState(null);
 
-  // Handle user menu open
-  const handleMenuClick = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
 
-  // Handle user menu close
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-  };
-
-  // Handle logout
-  const handleLogout = () => {
-    handleMenuClose();
-    logout();
-    navigate('/login');
-  };
 
   // Handle source selection changes
   const handleSourceChange = (event) => {
@@ -421,35 +394,6 @@ function App() {
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             SciX Search Comparisons
           </Typography>
-          {isAuthenticated && (
-            <>
-              <IconButton
-                size="large"
-                edge="end"
-                color="inherit"
-                aria-label="account"
-                aria-controls="menu-appbar"
-                aria-haspopup="true"
-                onClick={handleMenuClick}
-              >
-                <AccountCircleIcon />
-              </IconButton>
-              <Menu
-                id="menu-appbar"
-                anchorEl={anchorEl}
-                open={openMenu}
-                onClose={handleMenuClose}
-                MenuListProps={{
-                  'aria-labelledby': 'user-button',
-                }}
-              >
-                <MenuItem onClick={handleLogout}>
-                  <ExitToAppIcon fontSize="small" sx={{ mr: 1 }} />
-                  Logout
-                </MenuItem>
-              </Menu>
-            </>
-          )}
         </Toolbar>
         <Tabs 
           value={mainTab} 
@@ -1288,15 +1232,10 @@ function App() {
 
   return (
     <Routes>
-      <Route path="/login" element={
-        isAuthenticated ? <Navigate to="/" /> : <Login onLogin={login} correctPassword={DEFAULT_PASSWORD} />
-      } />
       <Route path="/" element={
-        <ProtectedRoute>
-          <Container maxWidth="xl">
-            <AppContent />
-          </Container>
-        </ProtectedRoute>
+        <Container maxWidth="xl">
+          <AppContent />
+        </Container>
       } />
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>

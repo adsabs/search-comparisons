@@ -7,13 +7,10 @@ This script tests the field boost implementation by:
 3. Checking results are properly boosted by field
 4. Comparing results with and without field boosts
 """
-import asyncio
 import os
 import sys
 import json
-from typing import Dict, Any
 import logging
-from dotenv import load_dotenv
 import httpx
 from datetime import datetime
 
@@ -22,7 +19,6 @@ backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, backend_dir)
 
 # Import models after adding backend to path
-from app.api.models import BoostConfig
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)

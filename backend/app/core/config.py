@@ -7,10 +7,9 @@ using Pydantic for validation and type checking.
 import os
 import logging
 from enum import Enum
-from typing import List, Dict, Any, Optional, Set, Union
-from pathlib import Path
+from typing import List, Dict, Any, Optional
 
-from pydantic import validator, Field, AnyHttpUrl
+from pydantic import validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 

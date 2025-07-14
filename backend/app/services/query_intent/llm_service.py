@@ -6,16 +6,12 @@ primarily using Ollama as the backend service to run local models.
 """
 import json
 import logging
-from typing import Dict, Any, Optional, List, Union
-import datetime
-import requests
-from requests.exceptions import RequestException
+from typing import Dict, Any, Optional, List
 from pydantic import BaseModel
 import aiohttp
 import re
 
-from .config import LLM_CONFIG, LLMModel, DEFAULT_MODEL, DEFAULT_TEMPERATURE, DEFAULT_MAX_TOKENS
-from ..ads_service import get_ads_results
+from .config import DEFAULT_TEMPERATURE, DEFAULT_MAX_TOKENS
 from .documentation_service import DocumentationService
 from app.core.config import settings
 
@@ -642,7 +638,7 @@ class LLMService:
                 intent_confidence=0.0
             )
             
-    def health_check(self) -> Dict[str, Any]:
+    async def health_check(self) -> Dict[str, Any]:
         """
         Perform a health check on the LLM service.
         
@@ -652,7 +648,7 @@ class LLMService:
         try:
             # Simple prompt to check if the service is responding
             prompt_data = self.format_prompt("Hello")
-            response = self.query_llm(prompt_data)
+            response = await self.query_llm(prompt_data)
             
             if response:
                 return {

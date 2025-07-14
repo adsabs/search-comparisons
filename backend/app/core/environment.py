@@ -10,7 +10,6 @@ import platform
 import ssl
 import certifi
 from typing import List, Optional
-from pathlib import Path
 
 # Initialize logging with more detail
 logging.basicConfig(

@@ -5,10 +5,10 @@ This module provides functionality to interpret user queries and transform them
 into effective ADS search queries using LLM-based intent detection.
 """
 import logging
-from typing import Dict, Any, List, Optional, TypedDict
+from typing import Dict, Any, Optional, TypedDict
 
 from .llm_service import LLMService
-from .cache_service import CacheService
+from ..unified_cache_service import UnifiedCacheService
 from app.core.config import settings
 from app.services.ads_service import get_ads_results
 
@@ -27,12 +27,12 @@ class SearchResponse(TypedDict):
     transformed_query: str
     intent: str
     explanation: str
-    results: List[Any]
+    results: Dict[str, Any]
 
 class QueryIntentService:
     """Service for interpreting and transforming search queries."""
     
-    def __init__(self, llm_service: Optional[LLMService] = None, cache_service: Optional[CacheService] = None):
+    def __init__(self, llm_service: Optional[LLMService] = None, cache_service: Optional[UnifiedCacheService] = None):
         """
         Initialize the QueryIntentService.
         
@@ -44,9 +44,9 @@ class QueryIntentService:
         self.llm_service = llm_service or LLMService.from_config()
         
         # Initialize cache service if not provided
-        self.cache_service = cache_service or CacheService()
+        self.cache_service = cache_service or UnifiedCacheService()
         
-        logger.info(f"Initialized QueryIntentService with LLM: {settings.LLM_ENABLED}")
+        logger.debug(f"Initialized QueryIntentService with LLM: {settings.LLM_ENABLED}")
     
     async def search(
         self,
@@ -70,7 +70,7 @@ class QueryIntentService:
             if use_cache:
                 cached_results = self.cache_service.get(query)
                 if cached_results:
-                    logger.info(f"Retrieved cached results for query: {query}")
+                    logger.debug(f"Retrieved cached results for query: {query}")
                     return cached_results
             
             # Transform query using LLM
@@ -90,7 +90,10 @@ class QueryIntentService:
                 "transformed_query": transformed_query.transformed_query,
                 "intent": transformed_query.intent,
                 "explanation": transformed_query.explanation,
-                "results": results
+                "results": {
+                    "numFound": len(results),
+                    "docs": results
+                }
             }
             
             # Cache results if enabled
@@ -106,7 +109,10 @@ class QueryIntentService:
                 "transformed_query": query,  # Fallback to original query
                 "intent": "unknown",
                 "explanation": f"Error processing query: {str(e)}",
-                "results": []
+                "results": {
+                    "numFound": 0,
+                    "docs": []
+                }
             }
     
     async def health_check(self) -> Dict[str, Any]:

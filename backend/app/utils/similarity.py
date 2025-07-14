@@ -8,7 +8,7 @@ and cosine similarity.
 import math
 import logging
 import rbo
-from typing import Dict, List, Set, Tuple, Any, Union, Optional
+from typing import Dict, List, Set, Any
 
 # Setup logging
 logger = logging.getLogger(__name__)

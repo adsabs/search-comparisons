@@ -1,7 +1,7 @@
 """
 Test suite for analyzing Quepid API metadata and search results.
 """
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any
 import os
 import pytest
 import httpx
@@ -9,7 +9,6 @@ import json
 import logging
 import sys
 from urllib.parse import urljoin
-from datetime import datetime
 
 # Setup logging to output to stdout
 logging.basicConfig(

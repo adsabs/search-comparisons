@@ -6,12 +6,12 @@ primarily using Ollama as the backend service to run local models.
 """
 import json
 import logging
-from typing import Dict, Any, Optional, List, Union
+from typing import Dict, Any, Optional
 import datetime
 import requests
 from requests.exceptions import RequestException
 
-from .config import LLM_CONFIG, LLMModel, DEFAULT_MODEL, DEFAULT_TEMPERATURE, DEFAULT_MAX_TOKENS
+from .config import LLM_CONFIG, DEFAULT_MODEL, DEFAULT_TEMPERATURE, DEFAULT_MAX_TOKENS
 
 # Configure logger for this module
 logger = logging.getLogger(__name__)

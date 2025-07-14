@@ -5,14 +5,10 @@ This module contains tests for the utility functions, including HTTP utilities,
 text processing, similarity calculations, and caching.
 """
 import hashlib
-import os
 import time
-from typing import Set, Dict, Any, List
+from typing import Set, Dict, List
 from unittest.mock import MagicMock, patch, mock_open
 
-import pytest
-import httpx
-from httpx import Response
 
 from app.utils.text_processing import normalize_text, stem_text, preprocess_text
 from app.utils.similarity import (

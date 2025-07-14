@@ -1,0 +1,28 @@
+# Agent Configuration for Search Comparisons Tool
+
+## Commands
+- **Test all**: `pytest backend/tests/`
+- **Test single**: `pytest backend/tests/test_filename.py::test_function`
+- **Test with coverage**: `pytest backend/tests/ --cov=backend/app --cov-report=html`
+- **Lint**: `ruff check backend/` or `black backend/`
+- **Format**: `black backend/`
+- **Type check**: `mypy backend/`
+- **Start local**: `./start_local.sh` (starts backend on :8000, frontend on :3000)
+- **Backend only**: `cd backend && python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000`
+
+## Architecture
+- **FastAPI backend** in `backend/app/` with services, routes, API models, core config
+- **Multi-engine search**: ADS, Google Scholar, Semantic Scholar, Web of Science
+- **LLM integration**: Query intent service with Ollama/HuggingFace/OpenAI support
+- **Key services**: `search_service.py` (main coordinator), `query_intent/service.py` (LLM query transformation), individual engine services
+- **Caching**: LRU cache with TTL in `cache_service.py`
+- **Docker**: Backend + Ollama LLM service + nginx frontend
+
+## Code Style
+- **Line length**: 88 chars (Ruff/Black config)
+- **Imports**: Standard, third-party, local (`from app.services.ads_service import`)
+- **Types**: Use `TypedDict` for structured data, `Optional[Type]` for nullable
+- **Async**: Prefer `async def` for I/O operations, use `aiohttp` for HTTP
+- **Logging**: Use module-level `logger = logging.getLogger(__name__)`
+- **Error handling**: Use structured exceptions, log errors before raising
+- **Naming**: snake_case for functions/vars, PascalCase for classes, descriptive names

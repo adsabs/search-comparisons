@@ -1,7 +1,7 @@
 """
 Quepid API routes for the search-comparisons application.
 """
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 from fastapi import APIRouter, HTTPException, Query
 from ...services.quepid_service import QuepidService
 

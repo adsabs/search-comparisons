@@ -29,7 +29,7 @@ sleep 2
 # Start frontend in foreground 
 echo "Starting frontend server..."
 cd frontend
-npm start &
+PORT=3000 npm start &
 FRONTEND_PID=$!
 cd ..
 

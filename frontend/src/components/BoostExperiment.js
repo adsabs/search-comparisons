@@ -28,6 +28,14 @@ import { TransformedQuery } from './TransformedQuery';
  * @param {string} props.API_URL - The API URL for making requests
  */
 const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
+  // Collection color palette for database labels
+  const collectionColors = {
+    astronomy: '#673ab7',     // deep purple
+    physics: '#ff9800',       // orange
+    earthscience: '#4caf50',  // green
+    general: '#607d8b'        // blue-grey
+  };
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [boostedResults, setBoostedResults] = useState(null);
@@ -92,11 +100,18 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
       abstract: 10,    // Abstract
       other: 11        // Other/unknown
     },
+    collection_boosts: {
+      astronomy: 1.0,     // Default: no boost
+      physics: 1.0,       // Default: no boost
+      earthscience: 1.0,  // Default: no boost
+      general: 1.0        // Default: no boost
+    },
     refereed_boost: 0.0,
     boost_weights: {
-      citation: 0.4,
+      citation: 0.3,
       recency: 0.3,
       doctype: 0.2,
+      collection: 0.1,
       refereed: 0.1
     },
     boost_combination_method: 'weighted_sum' // Add new state for combination method
@@ -139,11 +154,18 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
           abstract: 10,    // Abstract
           other: 11        // Other/unknown
         },
+        collection_boosts: {
+          astronomy: 1.0,     // Default: no boost
+          physics: 1.0,       // Default: no boost
+          earthscience: 1.0,  // Default: no boost
+          general: 1.0        // Default: no boost
+        },
         refereed_boost: 0.0,
         boost_weights: {
-          citation: 0.4,
+          citation: 0.3,
           recency: 0.3,
           doctype: 0.2,
+          collection: 0.1,
           refereed: 0.1
         }
       };
@@ -168,8 +190,8 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
         }
       }
 
-      // For nested objects (adsQueryFields, doctype_ranks, and boost_weights)
-      if (type === 'adsQueryFields' || type === 'doctype_ranks' || type === 'boost_weights') {
+      // For nested objects (adsQueryFields, doctype_ranks, collection_boosts, and boost_weights)
+      if (type === 'adsQueryFields' || type === 'doctype_ranks' || type === 'collection_boosts' || type === 'boost_weights') {
         const currentFields = prev[type] || defaultConfig[type];
         const newConfig = {
           ...prev,
@@ -578,7 +600,7 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
           query: searchQuery,
           sources: ['ads', 'scholar', 'semanticScholar', 'webOfScience'],
           metrics: ['ndcg@10', 'precision@10', 'recall@10'],
-          fields: ['title', 'abstract', 'author', 'year', 'citation_count', 'doctype'],
+          fields: ['title', 'abstract', 'author', 'year', 'citation_count', 'doctype', 'collection'],
           max_results: 20,
           quepid_case_id: quepidCaseId || undefined
         }),
@@ -658,6 +680,9 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
           recency_multiplier: parseFloat(boostConfig.recency_multiplier || 1.0),
           doctype_boosts: Object.fromEntries(
             Object.entries(boostConfig.doctype_ranks).map(([type, rank]) => [type, 1.0 / rank])
+          ),
+          collection_boosts: Object.fromEntries(
+            Object.entries(boostConfig.collection_boosts).map(([type, boost]) => [type, parseFloat(boost || 1.0)])
           ),
           field_boosts: {
             title: parseFloat(boostConfig.adsQueryFields.title || 0),
@@ -898,6 +923,36 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
           </Grid>
         </Box>
 
+        {/* Collection Boost */}
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="subtitle1" gutterBottom>
+            Collection Boost
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Control boosting by database/collection type. 0.0 = ignore completely, 1.0 = normal, &gt;1.0 = boost
+          </Typography>
+          <Grid container spacing={2}>
+            {Object.entries(boostConfig.collection_boosts).map(([type, boost]) => (
+              <Grid item xs={12} sm={6} md={3} key={type}>
+                <TextField
+                  fullWidth
+                  label={`${type.charAt(0).toUpperCase() + type.slice(1)} Boost`}
+                  type="number"
+                  value={boost}
+                  onChange={(e) => handleBoostChange('collection_boosts', type, parseFloat(e.target.value))}
+                  inputProps={{ min: 0, step: 0.1 }}
+                  helperText={
+                    boost === 0 ? 'Ignored' : 
+                    boost === 1 ? 'Normal' : 
+                    boost > 1 ? `${boost}x boost` : 
+                    `${boost}x reduction`
+                  }
+                />
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
+
         {/* Refereed Boost */}
         <Box sx={{ mb: 3 }}>
           <Typography variant="subtitle1" gutterBottom>
@@ -923,9 +978,12 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
           <Typography variant="subtitle1" gutterBottom>
             Boost Weights
           </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Control how much each boost type contributes to the final score
+          </Typography>
           <Grid container spacing={2}>
             {Object.entries(boostConfig.boost_weights).map(([type, weight]) => (
-              <Grid item xs={12} sm={6} md={3} key={type}>
+              <Grid item xs={12} sm={6} md={5} key={type}>
                 <TextField
                   fullWidth
                   label={`${type.charAt(0).toUpperCase() + type.slice(1)} Weight`}
@@ -1850,6 +1908,21 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
                     variant="outlined"
                   />
                 )}
+                {selectedRecord.collection && (
+                  <>
+                    {selectedRecord.collection.split(',').map((collection, index) => (
+                      <Chip 
+                        key={index}
+                        label={`Database: ${collection.trim().charAt(0).toUpperCase() + collection.trim().slice(1)}`} 
+                        variant="outlined"
+                        sx={{
+                          bgcolor: collectionColors[collection.trim()] || 'default',
+                          color: collectionColors[collection.trim()] ? 'white' : 'inherit'
+                        }}
+                      />
+                    ))}
+                  </>
+                )}
               </Box>
               <Box sx={{ mt: 3 }}>
                 {renderJudgmentSelector(selectedRecord)}
@@ -1968,6 +2041,24 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
                         variant="outlined"
                         sx={{ height: 20, '& .MuiChip-label': { px: 1, fontSize: '0.7rem' } }}
                       />
+                    )}
+                    {result.collection && (
+                      <>
+                        {result.collection.split(',').map((collection, index) => (
+                          <Chip
+                            key={index}
+                            label={collection.trim().charAt(0).toUpperCase() + collection.trim().slice(1)}
+                            size="small"
+                            variant="outlined"
+                            sx={{
+                              height: 20,
+                              '& .MuiChip-label': { px: 1, fontSize: '0.7rem' },
+                              bgcolor: collectionColors[collection.trim()] || 'default',
+                              color: collectionColors[collection.trim()] ? 'white' : 'inherit'
+                            }}
+                          />
+                        ))}
+                      </>
                     )}
                     {containerId === 'boosted' && result.boosted_score !== undefined && result.boosted_score !== null && (
                       <Chip 

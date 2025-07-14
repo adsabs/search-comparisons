@@ -7,11 +7,9 @@ used for diagnostics, testing, and development purposes.
 import logging
 import os
 import time
-from typing import Dict, List, Any, Optional
-import httpx
+from typing import Dict, List, Any
 
-from fastapi import APIRouter, HTTPException, Depends, Request, Query
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, HTTPException, Request, Query
 
 from ...api.models import SearchResult
 from ...services.ads_service import get_bibcode_from_doi, get_ads_results

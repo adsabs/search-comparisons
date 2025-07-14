@@ -7,7 +7,7 @@ on search results. It compares results with and without field weights.
 import os
 import asyncio
 import logging
-from typing import Dict, Any, List
+from typing import Dict, Any
 import json
 from datetime import datetime
 import httpx

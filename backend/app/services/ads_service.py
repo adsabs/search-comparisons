@@ -7,13 +7,14 @@ and retrieving bibliographic information.
 import os
 import logging
 import json
-from typing import List, Dict, Any, Optional, Union, TypedDict, Literal
+from typing import List, Dict, Any, Optional, TypedDict
 
 import httpx
 
 from ..api.models import SearchResult
 from ..utils.http import safe_api_request
-from ..utils.cache import get_cache_key, load_from_cache, save_to_cache
+from .unified_cache_service import get_cache_service
+from .query_transformation import transform_query_with_boosts
 
 # Setup logging
 logger = logging.getLogger(__name__)
@@ -62,7 +63,9 @@ ADS_FIELD_MAPPING = {
     "lang": "lang",
     "orcid": "orcid",
     "read_count": "read_count",
-    "vizier": "vizier"
+    "vizier": "vizier",
+    "database": "database",
+    "pubdate": "pubdate"
 }
 
 def get_ads_api_key() -> str:
@@ -145,7 +148,7 @@ async def get_bibcode_from_doi(doi: str) -> Optional[str]:
                 logger.warning(f"Bibcode not found in response for DOI: {doi}")
                 return None
             
-            logger.info(f"Found bibcode {bibcode} for DOI: {doi}")
+            logger.debug(f"Found bibcode {bibcode} for DOI: {doi}")
             return bibcode
             
     except Exception as e:
@@ -162,7 +165,7 @@ def _get_default_fields() -> List[str]:
     return [
         "id", "bibcode", "title", "author", "year", "citation_count",
         "abstract", "doctype", "property", "pub", "volume", "page",
-        "doi", "keyword"
+        "doi", "keyword", "database", "pubdate", "collection"
     ]
 
 def _get_sort_parameter(intent: Optional[str], sort: Optional[str]) -> str:
@@ -183,10 +186,10 @@ def _get_sort_parameter(intent: Optional[str], sort: Optional[str]) -> str:
         return "score desc"  # Default sort by relevance score
         
     if "influential" in intent or "highly cited" in intent or "popular" in intent:
-        logger.info(f"Sorting by citation count for intent: {intent}")
+        logger.debug(f"Sorting by citation count for intent: {intent}")
         return "citation_count desc"
     elif "recent" in intent:
-        logger.info(f"Sorting by date for intent: {intent}")
+        logger.debug(f"Sorting by date for intent: {intent}")
         return "date desc"
     
     return "score desc"
@@ -220,6 +223,53 @@ def _create_search_result(doc: Dict[str, Any], rank: int) -> SearchResult:
     Returns:
         SearchResult: Processed search result
     """
+    # Process database field to determine collection
+    database = doc.get("database", [])
+    collection = "general"  # default
+    
+    # Debug logging to see what database values we're getting
+    logger.debug(f"Processing database field: {database}")
+    logger.debug(f"Database field type: {type(database)}")
+    
+    if isinstance(database, list) and database:
+        # Map all database values to their corresponding collections
+        db_values = [db.lower() for db in database]
+        logger.debug(f"All database values (normalized): {db_values}")
+        
+        collections = []
+        for db in db_values:
+            if "earth" in db:
+                collections.append("earthscience")
+            elif "astronomy" in db:
+                collections.append("astronomy")
+            elif "physics" in db:
+                collections.append("physics")
+        
+        # Remove duplicates and sort for consistency
+        collections = sorted(list(set(collections)))
+        
+        # If no specific collections found, default to general
+        if not collections:
+            collections = ["general"]
+        
+        # Join multiple collections with comma for string representation
+        collection = ",".join(collections)
+        logger.debug(f"Mapped collections: {collections}")
+    elif isinstance(database, str) and database:
+        # Handle single database value
+        db_lower = database.lower()
+        logger.debug(f"Single database value (normalized): {db_lower}")
+        if "astronomy" in db_lower:
+            collection = "astronomy"
+        elif "physics" in db_lower:
+            collection = "physics"
+        elif "earth" in db_lower:
+            collection = "earthscience"
+        else:
+            collection = "general"
+    
+    logger.debug(f"Final collection assigned: {collection}")
+    
     return SearchResult(
         title=doc.get("title", [""])[0] if isinstance(doc.get("title"), list) else doc.get("title", ""),
         author=doc.get("author", []),
@@ -231,7 +281,9 @@ def _create_search_result(doc: Dict[str, Any], rank: int) -> SearchResult:
         rank=rank,
         citation_count=doc.get("citation_count", 0),
         doctype=doc.get("doctype", ""),
-        property=doc.get("property", [])
+        property=doc.get("property", []),
+        collection=collection,
+        pubdate=doc.get("pubdate", "")
     )
 
 async def get_ads_results(
@@ -262,14 +314,14 @@ async def get_ads_results(
     """
     try:
         # Log input parameters
-        logger.info("=== ADS API Request Parameters ===")
-        logger.info(f"Query: {query}")
-        logger.info(f"Fields: {fields}")
-        logger.info(f"Num results: {num_results}")
-        logger.info(f"Intent: {intent}")
-        logger.info(f"Sort: {sort}")
-        logger.info(f"QF parameter: {qf}")
-        logger.info(f"Field boosts: {field_boosts}")
+        logger.debug("=== ADS API Request Parameters ===")
+        logger.debug(f"Query: {query}")
+        logger.debug(f"Fields: {fields}")
+        logger.debug(f"Num results: {num_results}")
+        logger.debug(f"Intent: {intent}")
+        logger.debug(f"Sort: {sort}")
+        logger.debug(f"QF parameter: {qf}")
+        logger.debug(f"Field boosts: {field_boosts}")
         
         # Set default fields if not provided
         fields = fields or _get_default_fields()
@@ -284,15 +336,16 @@ async def get_ads_results(
         effective_query = query
         if field_boosts:
             effective_query = transform_query_with_boosts(query, field_boosts)
-            logger.info(f"Transformed query with field boosts: {effective_query}")
+            logger.debug(f"Transformed query with field boosts: {effective_query}")
         
         # Check cache first if enabled
         if use_cache:
-            cache_key = get_cache_key("ads_api", effective_query, fields, num_results, qf)
-            cached_results = load_from_cache(cache_key)
+            cache_service = get_cache_service()
+            cache_key = cache_service.get_cache_key("ads_api", effective_query, fields, num_results, qf)
+            cached_results = cache_service.get(cache_key)
             
             if cached_results is not None:
-                logger.info(f"Retrieved {len(cached_results)} results from cache for API query")
+                logger.debug(f"Retrieved {len(cached_results)} results from cache for API query")
                 return cached_results
         
         async with httpx.AsyncClient() as client:
@@ -313,27 +366,27 @@ async def get_ads_results(
             # Add qf parameter if provided
             if qf:
                 try:
-                    logger.info(f"Processing qf parameter: {qf}")
+                    logger.debug(f"Processing qf parameter: {qf}")
                     # Split into field-weight pairs and validate
                     field_weights = []
                     for fw in qf.split():
-                        logger.info(f"Processing field weight pair: {fw}")
+                        logger.debug(f"Processing field weight pair: {fw}")
                         if "^" in fw:
                             field, weight = fw.split("^")
                             # Convert field to lowercase for case-insensitive matching
                             field = field.lower()
-                            logger.info(f"Field: {field}, Weight: {weight}")
+                            logger.debug(f"Field: {field}, Weight: {weight}")
                             # Check if field exists in mapping
                             if field in ADS_FIELD_MAPPING:
                                 # Use the mapped field name
                                 mapped_field = ADS_FIELD_MAPPING[field]
-                                logger.info(f"Mapped field {field} to {mapped_field}")
+                                logger.debug(f"Mapped field {field} to {mapped_field}")
                                 try:
                                     # Validate weight is a positive number
                                     weight_float = float(weight)
                                     if weight_float > 0:
                                         field_weights.append(f"{mapped_field}^{weight}")
-                                        logger.info(f"Added field weight: {mapped_field}^{weight}")
+                                        logger.debug(f"Added field weight: {mapped_field}^{weight}")
                                     else:
                                         logger.warning(f"Invalid weight value in qf parameter: {weight} for field {field}")
                                 except ValueError:
@@ -345,19 +398,19 @@ async def get_ads_results(
                     
                     if field_weights:
                         params["qf"] = " ".join(field_weights)
-                        logger.info(f"Final qf parameter: {params['qf']}")
+                        logger.debug(f"Final qf parameter: {params['qf']}")
                     else:
                         logger.warning("No valid field weights found in qf parameter")
                 except Exception as e:
                     logger.error(f"Error formatting qf parameter: {str(e)}")
             
             # Log request details
-            logger.info("=== ADS API Request Details ===")
-            logger.info(f"URL: {ADS_API_URL}")
-            logger.info(f"Query: {effective_query}")
-            logger.info(f"Parameters: {json.dumps(params, indent=2)}")
-            logger.info(f"Field weights (qf): {params.get('qf', 'None')}")
-            logger.info(f"Field boosts: {field_boosts}")
+            logger.debug("=== ADS API Request Details ===")
+            logger.debug(f"URL: {ADS_API_URL}")
+            logger.debug(f"Query: {effective_query}")
+            logger.debug(f"Parameters: {json.dumps(params, indent=2)}")
+            logger.debug(f"Field weights (qf): {params.get('qf', 'None')}")
+            logger.debug(f"Field boosts: {field_boosts}")
             
             # Make request
             response_data = await safe_api_request(
@@ -370,11 +423,11 @@ async def get_ads_results(
             )
             
             # Log response data for debugging
-            logger.info("=== ADS API Response Details ===")
-            logger.info(f"Status: {response_data.get('responseHeader', {}).get('status', 'unknown')}")
-            logger.info(f"Response time: {response_data.get('responseHeader', {}).get('QTime', 'unknown')}ms")
-            logger.info(f"Response params: {json.dumps(response_data.get('responseHeader', {}).get('params', {}), indent=2)}")
-            logger.info(f"Number of results: {response_data.get('response', {}).get('numFound', 'unknown')}")
+            logger.debug("=== ADS API Response Details ===")
+            logger.debug(f"Status: {response_data.get('responseHeader', {}).get('status', 'unknown')}")
+            logger.debug(f"Response time: {response_data.get('responseHeader', {}).get('QTime', 'unknown')}ms")
+            logger.debug(f"Response params: {json.dumps(response_data.get('responseHeader', {}).get('params', {}), indent=2)}")
+            logger.debug(f"Number of results: {response_data.get('response', {}).get('numFound', 'unknown')}")
             
             # Check if we got a response
             docs = response_data.get("response", {}).get("docs", [])
@@ -387,9 +440,9 @@ async def get_ads_results(
             
             # Save to cache if enabled
             if use_cache and results:
-                save_to_cache(cache_key, results)
+                cache_service.set(cache_key, results)
             
-            logger.info(f"Retrieved {len(results)} results from ADS API")
+            logger.debug(f"Retrieved {len(results)} results from ADS API")
             return results
             
     except Exception as e:

@@ -7,7 +7,6 @@ calculations.
 """
 import re
 import logging
-from typing import List, Set, Dict, Optional
 
 import nltk
 from nltk.stem import PorterStemmer

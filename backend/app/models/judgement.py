@@ -1,10 +1,9 @@
 """Judgement model for SQLAlchemy."""
 
 from datetime import datetime
-from typing import Optional
-from uuid import UUID, uuid4
+from uuid import uuid4
 
-from sqlalchemy import Column, String, Float, Integer, DateTime, ForeignKey
+from sqlalchemy import Column, String, Float, Integer, DateTime
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 
 from app.core.database import Base
