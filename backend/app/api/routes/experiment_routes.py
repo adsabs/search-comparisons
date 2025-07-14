@@ -231,10 +231,12 @@ async def boost_search_results(
             logger.info(f"Using query field weights (qf): {qf}")
         
         # Get original results with qf parameter if provided
+        # Use more results for boosting to ensure we get diverse collections
         fields = ["title", "author", "abstract", "doi", "year", "citation_count", "doctype", "property", "url", "database", "pubdate", "collection"]
         original_results = await get_ads_results(
             query=query,
             fields=fields,
+            num_results=200,  # Get even more results to find earthscience papers
             qf=qf  # Pass the qf parameter to get_ads_results
         )
         

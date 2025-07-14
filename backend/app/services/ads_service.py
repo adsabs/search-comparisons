@@ -21,7 +21,8 @@ logger = logging.getLogger(__name__)
 
 # API Constants
 ADS_API_URL = "https://api.adsabs.harvard.edu/v1/search/query"
-NUM_RESULTS = 20
+NUM_RESULTS = 20  # Default for regular searches
+BOOST_EXPERIMENT_RESULTS = 100  # More results for boost experiments
 TIMEOUT_SECONDS = 15
 
 # Type definitions
@@ -204,7 +205,7 @@ def _map_fields_to_ads(fields: List[str]) -> List[str]:
     Returns:
         List[str]: List of mapped ADS API fields
     """
-    ads_fields = ["bibcode", "id"]  # Always include these
+    ads_fields = ["bibcode", "id", "database"]  # Always include these
     for field in fields:
         if field in ADS_FIELD_MAPPING:
             ads_field = ADS_FIELD_MAPPING[field]

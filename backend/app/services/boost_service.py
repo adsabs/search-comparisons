@@ -169,6 +169,11 @@ def calculate_collection_boost(collection: str, collection_boosts: Dict[str, flo
     """
     Calculate collection boost based on numerical multipliers.
     
+    For records with multiple collections, the boost is calculated as:
+    (boost_database1 + boost_database2 + ...) / num_databases_assigned
+    
+    For records with single collections, the boost is applied multiplicatively.
+    
     Args:
         collection: Collection name(s) (e.g., 'astronomy', 'physics', 'earthscience,astronomy', 'general')
         collection_boosts: Dictionary mapping collections to boost multipliers
@@ -182,19 +187,25 @@ def calculate_collection_boost(collection: str, collection_boosts: Dict[str, flo
     # Handle multiple collections separated by comma
     collections = [c.strip().lower() for c in collection.split(',')]
     
-    # If any collection has 0 boost, filter out the entire record
+    # Calculate boost for each collection - don't filter out for 0.0 in multi-collection papers
+    # Only filter out if ALL collections have 0.0 boost or if it's a single collection with 0.0 boost
+    
+    # Calculate boost for each collection
+    total_boost = 0.0
+    num_collections = len(collections)
+    
     for coll in collections:
         boost = collection_boosts.get(coll, 1.0)
-        if boost == 0.0:
-            return 0.0
+        total_boost += boost
     
-    # Calculate boost for each collection and return the maximum
-    max_boost = 1.0
-    for coll in collections:
-        boost = collection_boosts.get(coll, 1.0)
-        max_boost = max(max_boost, boost)
+    # For single collections, filter out if boost is 0.0
+    if num_collections == 1:
+        if total_boost == 0.0:
+            return 0.0  # Filter out single collection with 0.0 boost
+        return total_boost
     
-    return max_boost
+    # For multiple collections, return the average (don't filter out for 0.0 in mix)
+    return total_boost / num_collections
 
 def combine_boost_factors(
     boosts: Dict[str, float],
@@ -299,6 +310,23 @@ async def apply_all_boosts(
         collection_boosts = boost_config.get('collection_boosts', {})
         combination_method = boost_config.get('boost_combination_method', 'weighted_sum')
         boost_weights = boost_config.get('boost_weights', DEFAULT_BOOST_WEIGHTS)
+        
+        # Auto-adjust combination method for large collection boosts
+        # If any collection boost is > 10, use simple_sum to avoid weight dilution
+        max_collection_boost = max(collection_boosts.values()) if collection_boosts else 0
+        if max_collection_boost > 10 and combination_method == 'weighted_sum':
+            combination_method = 'simple_sum'
+            logger.info(f"Auto-adjusted combination method to simple_sum due to large collection boost: {max_collection_boost}")
+        
+        # Debug logging for boost configuration
+        logger.info(f"Boost configuration: collection_boosts={collection_boosts}, combination_method={combination_method}")
+        
+        # Log collection distribution in original results
+        collections_in_results = {}
+        for result in boosted_results:
+            collection = result.collection or 'unknown'
+            collections_in_results[collection] = collections_in_results.get(collection, 0) + 1
+        logger.info(f"Collections in original results: {collections_in_results}")
 
         # Initialize scores and source_id for each result
         for i, result in enumerate(boosted_results):
@@ -362,7 +390,7 @@ async def apply_all_boosts(
             
             # Debug logging for collection boost
             if collection_boosts:
-                logger.info(f"Collection boost for {result.title[:50]}...: collection={result.collection}, boost={base_boost}")
+                logger.info(f"Collection boost for {result.title[:50]}...: collection={result.collection}, boost={base_boost}, config={collection_boosts}")
             
             # Field boost
             if field_boosts:
@@ -411,8 +439,11 @@ async def apply_all_boosts(
                 result.boost_factors['refereed'] = boosts['refereed']
             
             # Check if collection boost is 0.0 (filter out)
+            # Only filter out if it's exactly 0.0 (single collection with 0.0 boost)
+            # Multi-collection papers with averaged boost > 0.0 should not be filtered
             if collection_boosts and boosts.get('collection', 1.0) == 0.0:
                 # Mark this result for filtering by setting score to 0
+                logger.info(f"Filtering out result due to 0.0 collection boost: {result.title[:50]}..., collection={result.collection}")
                 result._score = 0.0
                 result.boosted_score = 0.0
                 continue
@@ -424,16 +455,52 @@ async def apply_all_boosts(
                 combination_method
             )
             
-            # Debug logging for final boost calculation
-            if collection_boosts:
-                logger.info(f"Final boost for {result.title[:50]}...: boosts={boosts}, final_boost={final_boost}, original_score={result.original_score}, new_score={result.original_score * math.exp(final_boost)}")
-            
-            # Apply final boost to score
-            result._score *= math.exp(final_boost)
-            result.boosted_score = result._score
+            # Apply final boost to score with overflow protection
+            try:
+                # For very large collection boosts, use additive boosting to overcome original score dominance
+                collection_boost = boosts.get('collection', 0.0)
+                if collection_boost > 5000:
+                    # Use additive boosting for large collection boosts
+                    # This ensures earthscience papers can beat physics papers regardless of original score
+                    boost_multiplier = 1.0 + (final_boost / 100)  # Linear scaling for field/doctype boosts
+                    additive_boost = collection_boost / 1000  # Add collection boost directly
+                    result._score = result._score * boost_multiplier + additive_boost
+                    logger.info(f"Using additive boosting for large collection boost: collection={collection_boost}, additive={additive_boost}, final_score={result._score}")
+                elif final_boost > 100:
+                    # Linear scaling for very large boosts
+                    boost_multiplier = 1.0 + (final_boost / 100)  # Cap exponential effect
+                    result._score *= boost_multiplier
+                    logger.info(f"Using linear scaling for large boost: {final_boost} -> {boost_multiplier}")
+                else:
+                    # Normal exponential scaling for reasonable boosts
+                    boost_multiplier = math.exp(final_boost)
+                    result._score *= boost_multiplier
+                    
+                result.boosted_score = result._score
+                
+                # Debug logging for final boost calculation
+                if collection_boosts:
+                    logger.info(f"Final boost for {result.title[:50]}...: boosts={boosts}, final_boost={final_boost}, boost_multiplier={boost_multiplier}, original_score={result.original_score}, new_score={result._score}")
+                    
+            except OverflowError:
+                # Fallback for extreme values
+                logger.warning(f"Boost overflow for {result.title[:50]}..., using maximum multiplier")
+                result._score *= 1e10  # Large but not infinite multiplier
+                result.boosted_score = result._score
         
         # Filter out results with 0.0 score (collection boost = 0.0)
         filtered_results = [r for r in boosted_results if r._score > 0.0]
+        
+        # Log filtering results
+        filtered_count = len(boosted_results) - len(filtered_results)
+        logger.info(f"Filtered out {filtered_count} results due to 0.0 collection boost")
+        
+        # Log collection distribution after filtering
+        collections_after_filtering = {}
+        for result in filtered_results:
+            collection = result.collection or 'unknown'
+            collections_after_filtering[collection] = collections_after_filtering.get(collection, 0) + 1
+        logger.info(f"Collections after filtering: {collections_after_filtering}")
         
         # Sort by boosted score and update ranks
         filtered_results.sort(key=lambda x: x._score, reverse=True)

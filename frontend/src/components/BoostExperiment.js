@@ -682,7 +682,7 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
             Object.entries(boostConfig.doctype_ranks).map(([type, rank]) => [type, 1.0 / rank])
           ),
           collection_boosts: Object.fromEntries(
-            Object.entries(boostConfig.collection_boosts).map(([type, boost]) => [type, parseFloat(boost || 1.0)])
+            Object.entries(boostConfig.collection_boosts).map(([type, boost]) => [type, parseFloat(boost !== undefined && boost !== null && boost !== '' ? boost : 1.0)])
           ),
           field_boosts: {
             title: parseFloat(boostConfig.adsQueryFields.title || 0),
