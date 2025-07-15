@@ -54,6 +54,7 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
     original: { quepid: 0, manual: 0, total: 0 },
     boosted: { quepid: 0, manual: 0, total: 0 },
     scholar: { quepid: 0, manual: 0, total: 0 },
+    sciXDev: { quepid: 0, manual: 0, total: 0 },
     quepid: { quepid: 0, manual: 0, total: 0 }
   });
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
@@ -66,6 +67,7 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
     original: 10,
     boosted: 10,
     scholar: 10,
+    sciXDev: 10,
     quepid: 10
   });
   const [submitLoading, setSubmitLoading] = useState(false);
@@ -598,7 +600,7 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
         },
         body: JSON.stringify({
           query: searchQuery,
-          sources: ['ads', 'scholar', 'semanticScholar', 'webOfScience'],
+          sources: ['ads', 'scholar', 'semanticScholar', 'webOfScience', 'sciXDev'],
           metrics: ['ndcg@10', 'precision@10', 'recall@10'],
           fields: ['title', 'abstract', 'author', 'year', 'citation_count', 'doctype', 'collection'],
           max_results: 20,
@@ -1204,10 +1206,11 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
       };
 
       // Count judgments for each source
-      ['original', 'boosted', 'scholar', 'quepid'].forEach(source => {
+      ['original', 'boosted', 'scholar', 'sciXDev', 'quepid'].forEach(source => {
         const results = source === 'original' ? searchResults?.results?.ads :
                        source === 'boosted' ? boostedResults?.results?.ads :
                        source === 'scholar' ? searchResults?.results?.scholar :
+                       source === 'sciXDev' ? searchResults?.results?.sciXDev :
                        quepidResults;
 
         if (Array.isArray(results)) {
@@ -1353,7 +1356,7 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
       return (
         <ListItem>
           <ListItemText
-            primary={`No ${source} results available`}
+            primary={`No ${source === 'sciXDev' ? 'SciX Development API' : source} results available`}
             secondary={source === 'boosted' ? 
               "Configure and apply boost factors to see how they affect the ranking" :
               source === 'quepid' ? 
@@ -2166,6 +2169,7 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
         <MenuItem value="scholar">Google Scholar</MenuItem>
         <MenuItem value="semanticScholar">Semantic Scholar</MenuItem>
         <MenuItem value="webOfScience">Web of Science</MenuItem>
+        <MenuItem value="sciXDev">SciX Development</MenuItem>
       </Select>
     </FormControl>
   );
@@ -2179,6 +2183,8 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
         return 'Semantic Scholar';
       case 'webOfScience':
         return 'Web of Science';
+      case 'sciXDev':
+        return 'SciX Development';
       default:
         return engine;
     }

@@ -130,6 +130,12 @@ SERVICE_CONFIG = {
         "priority": 4,
         "timeout": 20,
         "min_results": 3,
+    },
+    "sciXDev": {
+        "enabled": True,
+        "priority": 5,
+        "timeout": 15,
+        "min_results": 0,  # Allow stub to return empty results
     }
 }
 
@@ -223,6 +229,9 @@ async def get_results_with_fallback(
                         return await get_semantic_scholar_results(effective_query, fields, num_results)
                     elif source == "webOfScience":
                         return await get_web_of_science_results(effective_query, fields, num_results)
+                    elif source == "sciXDev":
+                        from .scix_dev_service import get_scix_dev_results
+                        return await get_scix_dev_results(effective_query, fields, num_results)
                     else:
                         logger.error(f"Unknown source: {source}")
                         return []
@@ -248,7 +257,7 @@ async def get_results_with_fallback(
                     logger.error(f"All attempts failed for {source}")
         
         # Save results to cache if successful
-        if success and source_results:
+        if success and source_results is not None:
             # Generate cache key with all parameters
             cache_key = get_cache_service().get_cache_key(
                 source=source,
