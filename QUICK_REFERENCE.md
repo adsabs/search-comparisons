@@ -38,11 +38,6 @@ cd frontend && pnpm install && pnpm dev
 ./start_local.sh
 ```
 
-### Key Commands
-- **Test**: `pytest backend/tests/`
-- **Lint**: `ruff check backend/` or `black backend/`
-- **Format**: `black backend/`
-
 ### Adding a New Search Engine
 1. Create `services/your_engine_service.py`
 2. Register in `main.py` and `SearchService`
@@ -54,6 +49,7 @@ cd frontend && pnpm install && pnpm dev
 - Services: `backend/app/services/`
 - Frontend components: `frontend/src/components/`
 - API types: `frontend/src/types/`
+- Tests: `backend/tests/`
 
 ## For Scientists
 
@@ -84,10 +80,6 @@ GET /api/quepid/judgments/{case_id}?query=exoplanet
 }
 ```
 
-### Metrics Interpretation
-- **nDCG@10**: 0.8+ excellent, 0.6-0.8 good, 0.4-0.6 fair, <0.4 poor
-- **Precision@10**: Fraction of relevant results in top 10
-- **Jaccard**: 0.3+ high overlap, 0.1-0.3 moderate, <0.1 low overlap
 
 ### Python Example for Batch Testing
 ```python
