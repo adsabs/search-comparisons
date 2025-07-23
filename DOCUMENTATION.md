@@ -82,6 +82,14 @@ The interface where judgements are collected is located under Experiments -> Rel
 - **XX Results**: Results from the selected Comparison Engine using the drop down menu above. The displayed record information types are identical to the others except for the collection.
 
 **Boost Controls**
+- **Run Boost Experiment**: Once you select your boost configuration settings click Run Boost Experiment to populate results in the middle results column under Boosted Results.
+- **ADS Query Field Weights**: Boxes to enter in values for author, year, title, abstract, and keyword weights used by the relevance algorithm.
+- **Citation Boost**: A boost factor that includes the citation count.
+- **Recency Boost**: The first box value controls the overall strength of the recency boost. The second box value controls how quickly the recency boost decays with age.
+- **Document Type Boost**: Boxes to enter rankings of importance for various document types that will be boosted based on their relative importance.
+- **Collection Boost**: Boxes to enter boost values for the collections in ADS/SciX.
+- **Refereed Boost**: A box to enter a boost factor to boost refereed papers.
+- **Boost Weights**: Boxes to enter values to control how much each boost type contributes to the final score including citation count, recency, document type, collection, and whether the paper is refereed.
 
 
 ### Step-by-Step Workflow
