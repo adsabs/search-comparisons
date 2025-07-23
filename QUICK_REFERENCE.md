@@ -4,21 +4,25 @@
 
 ### Starting a Search Session
 1. Open http://localhost:3001
-2. Enter query in Search Comparison tab
-3. Select engines to compare (ADS, Scholar, Semantic Scholar, Web of Science)
-4. Click "Search"
+2. Click on Experiments tab
+3. Stay on the 'Relevance Judgements' tab
+4. Type in your search query
+5. Write in your information need (e.g., if your query is Jarmak and your information need is papers by Stephanie Jarmak or your query is landslides and your information need is recent and review papers on landslides)
+6. Select 'show previous judgements' if you would like to see how others have judged the returned results if they are available in the database
+7. Click "Search"
+8. The returned results will show records from the ADS API on the left, the middle will return results after you run a 'boost experiment' (not necessary for relevance judgements unless testing boost changes), and you can select a comparison search engine to display on the right (Google Scholar, Web of Science, Semantic Scholar, or eventually a dev endpoint)
 
 ### Rating Results
-- **3 stars**: Must-read, highly relevant
-- **2 stars**: Relevant and helpful  
-- **1 star**: Marginally relevant
-- **0 stars**: Not relevant
+- **3**: Perfectly matches information need
+- **2**: Relevant but not what you would like to see in the top 5
+- **1**: Marginally relevant
+- **0**: Not relevant
 
 ### Best Practices
-- Judge at least top 10 results per engine
-- Stay consistent with rating scale
-- Focus on content relevance to the query
-- Judge independently per engine
+- Judge at least top 10 results from ADS/SciX (if comparing with the dev endpoint or other search engines then provide judgements for those results as well to compare NCDG scores)
+- Add notes for additional information about your ratings where appropriate
+- Include an information need
+
 
 ## For Developers
 
