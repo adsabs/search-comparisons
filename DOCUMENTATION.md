@@ -118,11 +118,6 @@ The interface where judgements are collected is located under Experiments -> Rel
 - **Click Export Judgements** to generate a comprehensive report that includes your recorded judgements, notes, selected configurations, etc.
 
 
-#### 4. Understanding Query Transformations
-- Switch to the "Query Intent" tab to see how the system rewrites your query
-- The LLM-powered transformation makes queries more specific for academic search
-- This helps you understand why certain results appear
-
 
 
 ### Common Scenarios
