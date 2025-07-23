@@ -35,7 +35,7 @@ cd backend && python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8001
 cd frontend && pnpm install && pnpm dev
 
 # Full stack with startup script
-./start_local.sh
+./startup.sh
 ```
 
 ### Adding a New Search Engine

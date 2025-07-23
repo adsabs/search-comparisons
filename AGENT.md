@@ -7,7 +7,7 @@
 - **Lint**: `ruff check backend/` or `black backend/`
 - **Format**: `black backend/`
 - **Type check**: `mypy backend/`
-- **Start local**: `./start_local.sh` (starts backend on :8001, frontend on :3001)
+- **Start local**: `./startup.sh` (starts backend on :8001, frontend on :3001)
 - **Backend only**: `cd backend && python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8001`
 
 ## Architecture
@@ -16,7 +16,7 @@
 - **LLM integration**: Query intent service with Ollama/HuggingFace/OpenAI support
 - **Key services**: `search_service.py` (main coordinator), `query_intent/service.py` (LLM query transformation), individual engine services
 - **Caching**: LRU cache with TTL in `cache_service.py`
-- **Docker**: Backend + Ollama LLM service + nginx frontend
+- **Local development**: Backend + frontend without Docker
 
 ## Code Style
 - **Line length**: 88 chars (Ruff/Black config)

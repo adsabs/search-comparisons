@@ -19,7 +19,8 @@ The Search Comparisons Tool is a comprehensive web application designed to compa
 ## Quick Start Guide
 
 ### Prerequisites
-- Docker and Docker Compose installed
+- Python 3.8+
+- Node.js and npm/pnpm
 - API keys for external services (ADS, Web of Science, etc.)
 
 ### Local Development Setup
@@ -32,16 +33,18 @@ cd search-comparisons
 cp backend/.env.example backend/.env
 # Edit backend/.env with your API keys
 
-# Start the full stack
-docker-compose up --build
+# Install frontend dependencies
+cd frontend && npm install && cd ..
+
+# Start both frontend and backend
+./startup.sh
 
 # Access the application
 # Frontend: http://localhost:3001
 # Backend API: http://localhost:8001
-# Ollama LLM: http://localhost:11434
 ```
 
-### Alternative: Backend Only Development
+### Alternative: Manual Development
 ```bash
 # Backend development
 cd backend

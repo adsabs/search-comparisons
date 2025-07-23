@@ -19,8 +19,8 @@ A powerful search comparison tool that aggregates and analyzes results from mult
 ## Quick Start
 
 ```bash
-# Start the full stack
-docker-compose up --build
+# Start both frontend and backend
+./startup.sh
 
 # Access the application
 # Frontend: http://localhost:3001
@@ -159,7 +159,7 @@ The application uses environment variables for configuration. Key settings inclu
 ### Prerequisites
 
 - Python 3.8+
-- Docker and Docker Compose
+- Node.js and npm/pnpm
 - API keys for required services
 
 ### Setup
@@ -168,11 +168,12 @@ The application uses environment variables for configuration. Key settings inclu
 2. Install dependencies:
    ```bash
    pip install -r requirements.txt
+   cd frontend && npm install
    ```
 3. Set up environment variables
 4. Run the application:
    ```bash
-   ./start_local.sh
+   ./startup.sh
    ```
 
 ### Testing
