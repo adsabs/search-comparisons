@@ -96,50 +96,34 @@ The interface where judgements are collected is located under Experiments -> Rel
 
 #### 1. Starting a Search Comparison
 1. Open http://localhost:3001 in your browser
-2. Navigate to the "Search Comparison" tab
-3. Enter your search query in the text field
-4. Select which search engines to compare:
-   - **ADS**: Astrophysics Data System
-   - **Google Scholar**: Academic search engine
-   - **Semantic Scholar**: AI-powered academic search
-   - **Web of Science**: Comprehensive academic database
-5. Set the number of results to retrieve (default: 20)
-6. Click "Search"
+2. Navigate to the "Experiments" tab
+3. Stay on the "Relevance Judgements" tab
+4. Enter your search query in the search query text box
+5. Click the Search button
+6. Original Results displayed on the right are the results retrieved from ADS/SciX sorted by relevance for your input query
+7. Boosted results by default will not show up until you run a boost experiment
+8. The results in the right are modifiable based on the selected Comparison Engine (Google Scholar is default, other options include Semantic Scholar, Web of Science, and [soon] an ADS/SciX development endpoint. 
+9. The default number of results is 10 but you can click 'Load More' to load 10 more at a time.
 
 #### 2. Evaluating Results
-Each search engine's results appear in separate columns. For each result:
-
-1. **Read the title, authors, and abstract** to understand the paper's content
-2. **Click the star rating** (⭐) to assign relevance:
-   - **3 stars**: Highly relevant, must-read paper
-   - **2 stars**: Relevant and helpful
-   - **1 star**: Marginally relevant
-   - **0 stars**: Not relevant
-
-3. **Visual feedback**: Results change color based on your rating:
-   - Green: Relevant (2-3 stars)
-   - Yellow: Marginally relevant (1 star)
-   - Red: Not relevant (0 stars)
-
-#### 3. Best Practices for Judgment
+- **Make sure to provide an information need** it helps us better understand the scores
+- **Click the v button to pop out the abstract** please read it and the title before scoring
+- **Add a score of 3, 2, 1, or 0, where 3 is exactly what you wanted, 2 you would be happy with but isn't perfect, 1 is marginally relevant, and 0 is completely irrelevant.
 - **Judge at least the first 10 results** per engine
 - **Be consistent** with your rating scale across queries
-- **Consider the query intent**: What would a researcher actually want?
+- **Consider your information need**: What are you hoping to see with this query?
 - **Focus on content relevance**, not just keyword matching
-- **Judge independently** per engine - don't let one engine's ranking influence another
+- **When comparing results** look at the relative NCDG@10 scores to get an idea of which set of results are better for the given query
+- **Click Submit Judgements** when you want to add your judgements to the database (all submitted judgements are viewable in the Judgements Database tab)
+- **Click Export Judgements** to generate a comprehensive report that includes your recorded judgements, notes, selected configurations, etc.
+
 
 #### 4. Understanding Query Transformations
 - Switch to the "Query Intent" tab to see how the system rewrites your query
 - The LLM-powered transformation makes queries more specific for academic search
 - This helps you understand why certain results appear
 
-#### 5. Monitoring Your Impact
-- Visit the "Metrics" tab to see how your judgments affect performance
-- Metrics include:
-  - **nDCG@10**: Normalized Discounted Cumulative Gain (higher is better)
-  - **Precision@10**: Proportion of relevant results in top 10
-  - **Recall**: How many relevant papers were found
-  - **Jaccard Similarity**: Overlap between engine results
+
 
 ### Common Scenarios
 
