@@ -64,10 +64,25 @@ pnpm dev
 As a relevance judgment user, you evaluate search results from multiple engines to help improve search quality. Your judgments feed into metrics that guide search algorithm development.
 
 ### Interface Overview
-The web interface provides:
-- **Search Comparison Tab**: Enter queries and compare results side-by-side
-- **Query Intent Tab**: View how the system transforms your queries for ADS
-- **Metrics Tab**: See performance metrics based on your judgments
+The interface where judgements are collected is located under Experiments -> Relevance Judgements.
+
+**Search Configuration**
+- **Search Query Box**: What you input here gets passed as the query for the academic search engines
+- **Information Need Box**: Write a short description about what you hope your query will get you
+- **Search Button**: Performs the search across each academic search engine
+- **Show Previous Judgements Toggle**: If previous judgements exist for returned records you can turn this on to see 
+
+**Ranking Results**
+- **Submit Judgements Button**: Greyed out until you enter judgements. Once you enter judgements you can click this to add the judgements to the database.
+- **Export Judgements**: Export recorded judgements as a comprehensive report including other information about the current setup including the query, information need, timestamp, NDCG@10 scores, boost configuration, judgements, and notes.
+- **Show/Hide Boost Controls**: You can toggle the boost controls on and off depending on whether you need them to be shown.
+- **Comparison Engine Dropdwon**: Select the search engine you want to compare with on the right side including Google Scholar, Web of Science, Semantic Scholar, and (soon) an ADS/SciX development endpoint.
+- **Original Results**: Results from ADS/SciX sorted by relevance. Click the v button to pop out the abstract. The record includes the Title, publication year, citation count, collection, a drop down for relevance judgement selection, and a button to 'Add Note' to accompany your judgement score. If 'Show Previous Judgements' is toggled on the record also displays previous judgement scores associated with this record and their source (no labeled source if from the web tool, Quepid if from Quepid).
+- **Boosted Results**: Re-ranked results based on modifications to the boost controls available on the left side. No results are displayed by default. To populate the results you need to select 'Run Boost Experiment'. The displayed record information types are identical to the Original Results records.
+- **XX Results**: Results from the selected Comparison Engine using the drop down menu above. The displayed record information types are identical to the others except for the collection.
+
+**Boost Controls**
+
 
 ### Step-by-Step Workflow
 
