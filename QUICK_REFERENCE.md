@@ -34,14 +34,13 @@ cd backend && python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8001
 # Frontend only  
 cd frontend && pnpm install && pnpm dev
 
-# Full stack with Docker
-docker-compose up --build
+# Full stack with startup script
+./start_local.sh
 ```
 
 ### Key Commands
 - **Test**: `pytest backend/tests/`
 - **Lint**: `ruff check backend/` or `black backend/`
-- **Type check**: `mypy backend/`
 - **Format**: `black backend/`
 
 ### Adding a New Search Engine
@@ -148,7 +147,6 @@ cd frontend && pnpm dev
 ```bash
 ADS_API_KEY=your_ads_key
 WEB_OF_SCIENCE_API_KEY=your_wos_key
-QUEPID_API_TOKEN=your_quepid_token
 ```
 
 ### Optional
@@ -171,7 +169,3 @@ REACT_APP_API_URL=http://localhost:8001
 - **Docker logs**: `docker-compose logs [service_name]`
 - **Frontend logs**: Browser console (F12)
 
-## Support Contacts
-- **Technical Issues**: #search-tool Slack channel
-- **API Keys**: Contact system administrator
-- **Quepid Issues**: Check Quepid documentation or support
