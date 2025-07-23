@@ -809,19 +809,19 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
         {/* ADS Query Field Weights */}
         <Box sx={{ mb: 3 }}>
           <Typography variant="subtitle1" gutterBottom>
-            ADS Query Field Weights
+            ADS/SciX Query Field Weights
           </Typography>
           <Grid container spacing={2}>
             {Object.entries(boostConfig.adsQueryFields).map(([field, value]) => (
               <Grid item xs={12} sm={6} md={4} key={field}>
                 <TextField
                   fullWidth
-                  label={`${field.replace('_', ' ').toUpperCase()} Weight`}
+                  label={`${field.replace('_', ' ').toUpperCase()}`}
                   type="number"
                   value={value}
                   onChange={(e) => handleBoostChange('adsQueryFields', field, e.target.value)}
                   inputProps={{ min: 0, step: 0.1 }}
-                  helperText={`Weight for ${field.replace('_', ' ')} field`}
+
                 />
               </Grid>
             ))}
@@ -1637,10 +1637,10 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
           timestamp: judgment?.timestamp || new Date().toISOString(),
           // Add boost information if available
           boosts: source === 'boosted' ? {
-            field_boosts: boostConfig.fieldBoosts,
-            citation_boost: boostConfig.citationBoost,
-            recency_boost: boostConfig.recencyBoost,
-            doctype_boosts: boostConfig.doctypeBoosts,
+            field_boosts: boostConfig.adsQueryFields,
+            citation_boost: boostConfig.citation_boost,
+            recency_boost: boostConfig.recency_boost,
+            doctype_boosts: boostConfig.doctype_ranks,
             reference_year: boostConfig.referenceYear
           } : null
         });
@@ -1783,14 +1783,14 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
       '',
       '=== Boost Configuration ===',
       'Field Boosts:',
-      ...Object.entries(boostConfig.fieldBoosts).map(([field, value]) => `  ${field}: ${value}`),
+      ...Object.entries(boostConfig.adsQueryFields || {}).map(([field, value]) => `  ${field}: ${value}`),
       '',
-      `Citation Boost: ${boostConfig.citationBoost}`,
-      `Recency Boost: ${boostConfig.recencyBoost}`,
-      `Reference Year: ${boostConfig.referenceYear}`,
+      `Citation Boost: ${boostConfig.citation_boost || 0}`,
+      `Recency Boost: ${boostConfig.recency_boost || 0}`,
+      `Reference Year: ${boostConfig.referenceYear || 'N/A'}`,
       '',
       'Document Type Boosts:',
-      ...Object.entries(boostConfig.doctypeBoosts).map(([type, value]) => `  ${type}: ${value}`),
+      ...Object.entries(boostConfig.doctype_ranks || {}).map(([type, rank]) => `  ${type}: ${1.0 / rank}`),
       '',
       '=== Judgments ===',
       // Column headers
