@@ -26,7 +26,7 @@ export const TransformedQuery = ({ query, fieldBoosts }) => {
           .map(([key, value]) => [key, parseFloat(value)])
       );
 
-      const response = await fetch(`${API_URL}/api/transform-query`, {
+      const response = await fetch(`/api/transform-query`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -529,7 +529,7 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
       console.log('Fetching previous judgments for query:', query);
       console.log('Records to check:', results.map(r => ({ title: r.title, bibcode: r.bibcode })));
 
-      const response = await fetch(`${API_URL}/api/judgements/query/${encodeURIComponent(query)}`);
+      const response = await fetch(`/api/judgements/query/${encodeURIComponent(query)}`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch previous judgments');
@@ -593,7 +593,7 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
     setError(null);
     try {
       console.log('Making search request with query:', searchQuery);
-      const response = await fetch(`${API_URL}/api/search/compare`, {
+      const response = await fetch(`/api/search/compare`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -633,7 +633,7 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
       // If we have a Quepid case ID, fetch the Quepid results
       if (quepidCaseId) {
         try {
-          const quepidResponse = await fetch(`${API_URL}/api/quepid/judgments/${quepidCaseId}?query=${encodeURIComponent(searchQuery)}`);
+          const quepidResponse = await fetch(`/api/quepid/judgments/${quepidCaseId}?query=${encodeURIComponent(searchQuery)}`);
           if (quepidResponse.ok) {
             const quepidData = await quepidResponse.json();
             setQuepidResults(quepidData);
@@ -701,7 +701,7 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
       console.log('Boost experiment config being sent:', JSON.stringify(boostExperimentConfig, null, 2));
       
       // Make the API request
-      const response = await fetch(`${API_URL}/api/experiments/boost`, {
+      const response = await fetch(`/api/experiments/boost`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -2261,7 +2261,7 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
       }
 
       // Submit judgments to the backend
-      const response = await fetch(`${API_URL}/api/judgements/batch`, {
+      const response = await fetch(`/api/judgements/batch`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

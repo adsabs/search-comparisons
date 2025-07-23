@@ -7,8 +7,8 @@
 - **Lint**: `ruff check backend/` or `black backend/`
 - **Format**: `black backend/`
 - **Type check**: `mypy backend/`
-- **Start local**: `./start_local.sh` (starts backend on :8000, frontend on :3000)
-- **Backend only**: `cd backend && python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000`
+- **Start local**: `./start_local.sh` (starts backend on :8001, frontend on :3001)
+- **Backend only**: `cd backend && python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8001`
 
 ## Architecture
 - **FastAPI backend** in `backend/app/` with services, routes, API models, core config

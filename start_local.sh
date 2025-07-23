@@ -19,17 +19,34 @@ fi
 # Start backend in background
 echo "Starting backend server..."
 cd backend
-python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 &
+source venv/bin/activate && python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8001 &
 BACKEND_PID=$!
 cd ..
 
 # Give backend time to start
-sleep 2
+echo "Waiting for backend to start..."
+sleep 3
+
+# Test backend connection
+echo "Testing backend connection..."
+if curl -s http://localhost:8001/health > /dev/null; then
+  echo "✅ Backend is running on port 8001"
+else
+  echo "❌ Backend failed to start on port 8001"
+  exit 1
+fi
+
+# Ensure frontend environment is set
+echo "Setting up frontend environment..."
+cd frontend
+if [ ! -f .env ]; then
+  echo "REACT_APP_API_URL=http://localhost:8001" > .env
+  echo "Created frontend/.env with API URL"
+fi
 
 # Start frontend in foreground 
 echo "Starting frontend server..."
-cd frontend
-PORT=3000 npm start &
+PORT=3001 npm start &
 FRONTEND_PID=$!
 cd ..
 
@@ -45,5 +62,11 @@ function cleanup {
 trap cleanup SIGINT
 
 # Keep script running
-echo "Servers are running. Press Ctrl+C to stop."
+echo ""
+echo "🚀 Search Comparisons Tool is running:"
+echo "   Frontend: http://localhost:3001"
+echo "   Backend:  http://localhost:8001"
+echo "   API Docs: http://localhost:8001/docs"
+echo ""
+echo "Press Ctrl+C to stop both servers."
 wait 

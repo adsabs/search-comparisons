@@ -23,7 +23,7 @@ import QueryIntent from './components/QueryIntent';
 import StableInput from './components/StableInput';
 import JudgementsDatabase from './components/JudgementsDatabase';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8001';
 const APP_VERSION = "1.0.0";
 
 /**

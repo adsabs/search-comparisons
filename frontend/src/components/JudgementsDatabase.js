@@ -66,8 +66,8 @@ const JudgementsDatabase = ({ API_URL = DEFAULT_API_URL }) => {
     setLoading(true);
     setError(null);
     try {
-      console.log('Fetching judgements from:', `${API_URL}/api/judgements/query/all`);
-      const response = await fetch(`${API_URL}/api/judgements/query/all`);
+      console.log('Fetching judgements from:', `/api/judgements/query/all`);
+      const response = await fetch(`/api/judgements/query/all`);
       if (!response.ok) {
         throw new Error('Failed to fetch judgements');
       }
@@ -93,7 +93,7 @@ const JudgementsDatabase = ({ API_URL = DEFAULT_API_URL }) => {
 
     setDeleteLoading(true);
     try {
-      const response = await fetch(`${API_URL}/api/judgements/${judgementToDelete.id}`, {
+      const response = await fetch(`/api/judgements/${judgementToDelete.id}`, {
         method: 'DELETE',
       });
 
