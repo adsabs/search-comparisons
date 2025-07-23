@@ -1055,7 +1055,7 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
         Search Configuration
       </Typography>
       <Grid container spacing={2} alignItems="center">
-        <Grid item xs={12} md={4}>
+        <Grid item xs={12} md={5}>
           <TextField
             fullWidth
             label="Search Query"
@@ -1065,7 +1065,7 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
             disabled={searchLoading}
           />
         </Grid>
-        <Grid item xs={12} md={4}>
+        <Grid item xs={12} md={5}>
           <TextField
             fullWidth
             label="Information Need"
@@ -1077,7 +1077,6 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
             rows={2}
           />
         </Grid>
-
         <Grid item xs={12} md={2}>
           <Button
             fullWidth
