@@ -26,7 +26,7 @@ The Search Comparisons Tool is a comprehensive web application designed to compa
 ### Local Development Setup
 ```bash
 # Clone and navigate to repository
-git clone [repository-url]
+git clone https://github.com/adsabs/search-comparisons.git
 cd search-comparisons
 
 # Set up environment variables
