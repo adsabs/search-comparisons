@@ -2,6 +2,32 @@
 
 A powerful search comparison tool that aggregates and analyzes results from multiple academic search engines, with advanced query understanding and result comparison capabilities.
 
+## 📖 Documentation
+
+**For detailed information, see the comprehensive documentation:**
+
+- **[DOCUMENTATION.md](DOCUMENTATION.md)** - Complete guide for all users
+- **[QUICK_REFERENCE.md](QUICK_REFERENCE.md)** - Quick reference for common tasks
+
+### Documentation Sections
+- **User Guide**: For relevance judgment collection and evaluation
+- **Developer Guide**: For adding features and maintaining the system  
+- **Scientist Guide**: For algorithm testing and search experiments
+- **Architecture Overview**: System design and data flow
+- **Deployment & Maintenance**: Production setup and troubleshooting
+
+## Quick Start
+
+```bash
+# Start the full stack
+docker-compose up --build
+
+# Access the application
+# Frontend: http://localhost:3001
+# Backend API: http://localhost:8001
+# API Docs: http://localhost:8001/docs
+```
+
 ## Project Overview
 
 This tool provides a unified interface for searching across multiple academic search engines, including:
