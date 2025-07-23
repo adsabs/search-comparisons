@@ -1077,16 +1077,7 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
             rows={2}
           />
         </Grid>
-        <Grid item xs={12} md={2}>
-          <TextField
-            fullWidth
-            label="Quepid Case ID (Optional)"
-            value={quepidCaseId}
-            onChange={(e) => setQuepidCaseId(e.target.value)}
-            placeholder="Enter Quepid case ID"
-            disabled={searchLoading}
-          />
-        </Grid>
+
         <Grid item xs={12} md={2}>
           <Button
             fullWidth
