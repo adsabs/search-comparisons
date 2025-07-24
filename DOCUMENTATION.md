@@ -23,18 +23,10 @@ The Search Comparisons Tool is a comprehensive web application designed to compa
 - Node.js and npm/pnpm
 - API keys for external services (ADS, Web of Science, etc.)
 
-### Local Development Setup
+### Run the frontend and backened
 ```bash
-# Clone and navigate to repository
-git clone https://github.com/adsabs/search-comparisons.git
+# Project directory
 cd search-comparisons
-
-# Set up environment variables
-cp backend/.env.example backend/.env
-# Edit backend/.env with your API keys
-
-# Install frontend dependencies
-cd frontend && npm install && cd ..
 
 # Start both frontend and backend
 ./startup.sh
@@ -42,9 +34,11 @@ cd frontend && npm install && cd ..
 # Access the application
 # Frontend: http://localhost:3001
 # Backend API: http://localhost:8001
+
+# Environment variable API keys should already be set, these are modifiable in backend/.env
 ```
 
-### Alternative: Manual Development
+### Alternative: Manual Development Separating Front and Backend
 ```bash
 # Backend development
 cd backend
