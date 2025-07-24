@@ -193,6 +193,58 @@ The interface where judgements are collected is located under Experiments -> Rel
 - **Click Submit Judgements** when you want to add your judgements to the database (all submitted judgements are viewable in the Judgements Database tab)
 - **Click Export Judgements** to generate a comprehensive report that includes your recorded judgements, notes, selected configurations, etc.
 
+### Relevance Judgements Database
+
+The Relevance Judgements Database is a comprehensive interface for managing and analyzing all collected relevance judgements. This database is populated when users click the **Submit Judgements** button on the relevance judgements page, storing all evaluation data for analysis and export.
+
+#### Accessing the Database
+Navigate to **Experiments → Judgements Database** to view all stored relevance judgements.
+
+#### Key Features
+
+**Filtering and Search:**
+- **Query Filter**: Search judgements by the original search query text
+- **Rater ID Filter**: Filter by specific evaluator/rater identification
+- **Source Filter**: Filter by search engine source (ADS, Google Scholar, Semantic Scholar, Web of Science)
+- **Score Filter**: Filter by relevance score (Perfect/1.0, Good/0.67, Fair/0.33, Poor/0.0)
+
+**Data Management:**
+- **Individual Deletion**: Remove specific judgements using the delete button on each row
+- **Sortable Columns**: Click column headers to sort by query, title, source, score, or date
+- **Pagination**: Navigate through large datasets with configurable rows per page
+
+**Export Capabilities:**
+- **Export All**: Download complete judgements database in CSV or TXT format
+- **Export Filtered**: Export only the currently filtered subset of judgements
+- **Smart Filenames**: Exported files include query names or timestamps for easy identification
+- **Structured Format**: Exports include query, title, source, score, score label, notes, date, and rater ID
+
+**Display Information:**
+Each judgement record shows:
+- Original search query
+- Paper title and source (with color-coded chips)
+- Relevance score with descriptive labels (Perfect, Good, Fair, Poor)
+- Evaluation notes (if provided)
+- Creation timestamp
+- Rater identification
+
+#### Database Schema
+The judgements database stores:
+- `query`: Original search query text
+- `record_title`: Paper/document title
+- `record_source`: Search engine source
+- `judgement_score`: Numeric relevance score (0, 0.33, 0.67, 1.0)
+- `judgement_note`: Optional evaluation notes
+- `rater_id`: Evaluator identification
+- `created_at`: Timestamp of judgement creation
+
+#### Use Cases
+- **Performance Analysis**: Compare search engine effectiveness across different queries
+- **Rater Agreement Studies**: Analyze consistency between different evaluators
+- **Query-Specific Research**: Export judgements for specific search terms for detailed analysis
+- **Algorithm Development**: Use collected judgements to train and validate search ranking improvements
+- **Quality Assurance**: Review and clean evaluation data before analysis
+
 ### Query Intent Feature
 
 The Query Intent tab provides AI-powered query transformation using local LLM models:
