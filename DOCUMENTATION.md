@@ -36,7 +36,8 @@ Frontend: http://localhost:3001
 Backend API: http://localhost:8001
 
 Environment variable API keys should already be set, these are modifiable in backend/.env
-The startup script automatically builds the venv in the directory, any additional dependencies needed will need to be installed using this virtual environment
+
+The startup script automatically builds the venv in the directory, any additional dependencies should be installed using this virtual environment
 
 ### Alternative: Manual Development Separating Front and Backend
 ```bash
@@ -102,7 +103,7 @@ The interface where judgements are collected is located under Experiments -> Rel
 #### 2. Evaluating Results
 - **Make sure to provide an information need** it helps us better understand the scores
 - **Click the v button to pop out the abstract** please read it and the title before scoring
-- **Add a score of 3, 2, 1, or 0, where 3 is exactly what you wanted, 2 you would be happy with but isn't perfect, 1 is marginally relevant, and 0 is completely irrelevant.
+- **Add a score of 3, 2, 1, or 0**, where 3 is exactly what you wanted, 2 you would be happy with but isn't perfect, 1 is marginally relevant, and 0 is completely irrelevant.
 - **Judge at least the first 10 results** per engine
 - **Be consistent** with your rating scale across queries
 - **Consider your information need**: What are you hoping to see with this query?
@@ -111,31 +112,11 @@ The interface where judgements are collected is located under Experiments -> Rel
 - **Click Submit Judgements** when you want to add your judgements to the database (all submitted judgements are viewable in the Judgements Database tab)
 - **Click Export Judgements** to generate a comprehensive report that includes your recorded judgements, notes, selected configurations, etc.
 
-
-
-
-### Common Scenarios
-
-#### Judging Similar Papers
-When multiple engines return similar papers:
-- Judge each independently based on relevance to the query
-- Don't penalize an engine for returning fewer unique results
-- Focus on whether the specific result answers the research question
-
-#### Handling Edge Cases
-- **Preprints vs. Published Papers**: Generally rate published papers slightly higher
-- **Review Papers**: Often highly relevant for broad queries
-- **Conference Papers vs. Journal Articles**: Rate based on content quality and relevance
-- **Non-English Papers**: Rate based on relevance; language is secondary
-
-#### Query Types
-- **Broad Exploratory Queries**: Accept wider range of relevant results
-- **Specific Technical Queries**: Be more stringent about exact topic match
-- **Author/Citation Queries**: Focus on accuracy of bibliographic information
-
 ---
 
 ## Developer Guide: Adding Features
+
+Recommendation: Use the AGENT.md file associated with this project with your coding agent of choice (Claude Code, Amp, Copilot, Cursor, etc.) for any modifications to the project. The project was 100% created by AI coding agents, and any questions about or revisions to the codebase should be addressable through best practices using coding agents.
 
 ### Architecture Overview
 The application follows a modern microservices architecture:
@@ -145,7 +126,7 @@ Frontend (React + TypeScript + MUI)
 ↓ HTTP/REST API
 Backend (FastAPI + Python)
 ↓ External APIs
-Search Engines (ADS, Scholar, etc.) + LLM (Ollama)
+Search Engines (ADS, Google Scholar, etc.) + LLM (Ollama)
 ```
 
 ### Backend Structure
@@ -170,7 +151,7 @@ Main orchestrator for search operations:
 
 #### Individual Engine Services
 Each search engine has its own service module:
-- `ads_service.py`: ADS/SAO search integration
+- `ads_service.py`: ADS/SciX search integration
 - `scholar_service.py`: Google Scholar integration
 - `semantic_scholar_service.py`: Semantic Scholar API
 - `web_of_science_service.py`: Web of Science integration
@@ -409,7 +390,7 @@ This tool enables systematic comparison of search algorithms, ranking functions,
 - **Configurable ranking boosts**: Citation count, recency, document type, field weights
 - **LLM query transformation**: Test query rewriting effectiveness
 - **Relevance metrics**: nDCG, precision, recall, Jaccard similarity
-- **Reproducible experiments**: Caching and parameter versioning
+
 
 ### API Reference
 
@@ -841,7 +822,6 @@ print(f"Effect size (Cohen's d): {effect_size:.3f}")
 - **Google Scholar**: Academic search (API + scraping fallback)
 - **Semantic Scholar**: AI-powered academic search
 - **Web of Science**: Thomson Reuters academic database
-- **Quepid**: Relevance judgment collection platform
 - **Ollama**: Local LLM inference for query transformation
 
 ### Data Flow
@@ -1001,6 +981,7 @@ volumes:
 ```
 
 #### Environment Configuration
+The environment variable already exists in backend/.env, but in case anything happens to it:
 Create a `.env` file:
 ```bash
 # Required API Keys
@@ -1017,38 +998,6 @@ OLLAMA_BASE_URL=http://ollama:11434
 # Frontend Configuration
 REACT_APP_API_URL=http://localhost:8001
 REACT_APP_ENVIRONMENT=production
-```
-
-#### Cloud Deployment (AWS/GCP/Azure)
-
-**Container Service Deployment:**
-```bash
-# Build and tag images
-docker build -t search-comparisons-backend ./backend
-docker build -t search-comparisons-frontend ./frontend
-
-# Push to container registry
-docker tag search-comparisons-backend your-registry/search-comparisons-backend:latest
-docker push your-registry/search-comparisons-backend:latest
-
-# Deploy using your cloud provider's container service
-# (ECS, GKE, Container Instances, etc.)
-```
-
-**Render.com Deployment:**
-The repository includes `render.yaml` for one-click deployment:
-```yaml
-services:
-  - type: web
-    name: search-comparisons-backend
-    env: python
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "uvicorn app.main:app --host 0.0.0.0 --port $PORT"
-    envVars:
-      - key: ADS_API_KEY
-        sync: false
-      - key: WEB_OF_SCIENCE_API_KEY  
-        sync: false
 ```
 
 ### Monitoring and Logging
@@ -1198,7 +1147,10 @@ CREATE INDEX idx_search_results_query ON search_results(query_hash);
 CREATE INDEX idx_judgments_query_doc ON judgments(query_id, document_id);
 ```
 
-### Troubleshooting Common Issues
+
+## Troubleshooting
+
+### Common Issues and Solutions
 
 #### External API Failures
 ```python
@@ -1276,20 +1228,13 @@ async def get_cache_stats():
 async def clear_cache():
     cache.clear()
     return {"message": "Cache cleared"}
-```
-
----
-
-## Troubleshooting
-
-### Common Issues and Solutions
 
 #### API Connection Issues
 
 **Problem**: External search engines returning errors or timeouts
 ```
+
 ERROR: ADS API request failed: HTTPStatusError 429
-```
 
 **Solutions**:
 1. Check API key validity and quotas
@@ -1509,4 +1454,3 @@ async def get_error_summary():
     return error_tracker.get_error_summary()
 ```
 
-This comprehensive documentation should enable your team to effectively use, maintain, and extend the Search Comparisons Tool. Each section is tailored to its specific audience while providing the depth needed for ongoing development and research activities.
