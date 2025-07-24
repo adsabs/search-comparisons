@@ -79,7 +79,7 @@ The interface where judgements are collected is located under Experiments -> Rel
 - **Submit Judgements Button**: Greyed out until you enter judgements. Once you enter judgements you can click this to add the judgements to the database.
 - **Export Judgements**: Export recorded judgements as a comprehensive report including other information about the current setup including the query, information need, timestamp, NDCG@10 scores, boost configuration, judgements, and notes.
 - **Show/Hide Boost Controls**: You can toggle the boost controls on and off depending on whether you need them to be shown.
-- **Comparison Engine Dropdwon**: Select the search engine you want to compare with on the right side including Google Scholar, Web of Science, Semantic Scholar, and (soon) an ADS/SciX development endpoint.
+- **Comparison Engine Dropdwon**: Select the search engine you want to compare with on the right side including Google Scholar, Web of Science, Semantic Scholar, and SciX Development.
 - **Original Results**: Results from ADS/SciX sorted by relevance. Click the v button to pop out the abstract. The record includes the Title, publication year, citation count, collection, a drop down for relevance judgement selection, and a button to 'Add Note' to accompany your judgement score. If 'Show Previous Judgements' is toggled on the record also displays previous judgement scores associated with this record and their source (no labeled source if from the web tool, Quepid if from Quepid).
 - **Boosted Results**: Re-ranked results based on modifications to the boost controls available on the left side. No results are displayed by default. To populate the results you need to select 'Run Boost Experiment'. The displayed record information types are identical to the Original Results records.
 - **XX Results**: Results from the selected Comparison Engine using the drop down menu above. The displayed record information types are identical to the others except for the collection.
@@ -105,7 +105,7 @@ The interface where judgements are collected is located under Experiments -> Rel
 5. Click the Search button
 6. Original Results displayed on the right are the results retrieved from ADS/SciX sorted by relevance for your input query
 7. Boosted results by default will not show up until you run a boost experiment
-8. The results in the right are modifiable based on the selected Comparison Engine (Google Scholar is default, other options include Semantic Scholar, Web of Science, and [soon] an ADS/SciX development endpoint. 
+8. The results in the right are modifiable based on the selected Comparison Engine (Google Scholar is default, other options include Semantic Scholar, Web of Science, and SciX Development). 
 9. The default number of results is 10 but you can click 'Load More' to load 10 more at a time.
 
 #### 2. Evaluating Results
@@ -1259,6 +1259,31 @@ CREATE INDEX idx_search_results_query ON search_results(query_hash);
 CREATE INDEX idx_judgments_query_doc ON judgments(query_id, document_id);
 ```
 
+---
+
+## Recent Updates
+
+### SciX Development Integration Fix (January 2025)
+
+**Issue:** SciX Development results were not appearing in the relevance judgments experiment due to a JavaScript error and missing integration.
+
+**Root Cause:** The `updateJudgmentCounts` function in `BoostExperiment.js` was missing the `sciXDev` property initialization, causing a `TypeError` when the component tried to access `newCounts.sciXDev`.
+
+**Fix Applied:**
+1. **JavaScript Error Resolution**: Added `sciXDev: { quepid: 0, manual: 0, total: 0 }` to the `newCounts` object initialization in `updateJudgmentCounts` function (line 1196).
+
+2. **Complete SciX Development Integration**:
+   - Added SciX Development to NDCG calculations in `allNdcgValues` array (line 1265)
+   - Included SciX Development results in CSV export functionality (around line 1675)
+   - Added SciX Development NDCG scores to CSV export detailed report (line 1793)
+   - Integrated SciX Development into batch judgment submission function (around line 2250)
+
+**Files Modified:**
+- `frontend/src/components/BoostExperiment.js`: Primary fix location with multiple integration points
+
+**Result:** SciX Development now appears as a functional comparison option in the relevance judgments interface, with full support for scoring, export, and batch operations.
+
+---
 
 ## Troubleshooting
 

@@ -1192,6 +1192,7 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
         original: { quepid: 0, manual: 0, total: 0 },
         boosted: { quepid: 0, manual: 0, total: 0 },
         scholar: { quepid: 0, manual: 0, total: 0 },
+        sciXDev: { quepid: 0, manual: 0, total: 0 },
         quepid: { quepid: 0, manual: 0, total: 0 }
       };
 
@@ -1261,6 +1262,7 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
       { source: 'scholar', value: calculateNDCG(searchResults?.results?.scholar, 10, 'scholar') },
       { source: 'semanticScholar', value: calculateNDCG(searchResults?.results?.semanticScholar, 10, 'semanticScholar') },
       { source: 'webOfScience', value: calculateNDCG(searchResults?.results?.webOfScience, 10, 'webOfScience') },
+      { source: 'sciXDev', value: calculateNDCG(searchResults?.results?.sciXDev, 10, 'sciXDev') },
       { source: 'quepid', value: calculateNDCG(quepidResults, 10, 'quepid') }
     ].filter(item => item.value !== null);
 
@@ -1669,6 +1671,15 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
       }
     });
 
+    // Check SciX Development results
+    searchResults?.results?.sciXDev?.forEach(record => {
+      const recordId = record.bibcode || normalizeTitle(record.title);
+      const userJudgment = localJudgments[`sciXDev_${recordId}`];
+      if (userJudgment !== undefined) {
+        addRecordWithJudgment(record, userJudgment, 'sciXDev', userJudgment.type);
+      }
+    });
+
     // Check boosted results
     boostedResults?.results?.ads?.forEach(record => {
       const recordId = record.bibcode || normalizeTitle(record.title);
@@ -1688,6 +1699,7 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
       original: calculateNDCG(searchResults?.results?.ads, 10, 'original'),
       boosted: calculateNDCG(boostedResults?.results?.ads, 10, 'boosted'),
       scholar: calculateNDCG(searchResults?.results?.scholar, 10, 'scholar'),
+      sciXDev: calculateNDCG(searchResults?.results?.sciXDev, 10, 'sciXDev'),
       quepid: calculateNDCG(quepidResults, 10, 'quepid')
     };
 
@@ -1779,6 +1791,7 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
       `Original Results: ${ndcgScores.original?.toFixed(3) || 'N/A'}`,
       `Boosted Results: ${ndcgScores.boosted?.toFixed(3) || 'N/A'}`,
       `Google Scholar Results: ${ndcgScores.scholar?.toFixed(3) || 'N/A'}`,
+      `SciX Development Results: ${ndcgScores.sciXDev?.toFixed(3) || 'N/A'}`,
       `Quepid Results: ${ndcgScores.quepid?.toFixed(3) || 'N/A'}`,
       '',
       '=== Boost Configuration ===',
@@ -2235,6 +2248,14 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
         const userJudgment = localJudgments[`scholar_${recordId}`];
         if (userJudgment !== undefined) {
           addJudgment(record, userJudgment, 'Google Scholar');
+        }
+      });
+
+      searchResults?.results?.sciXDev?.forEach(record => {
+        const recordId = record.bibcode || normalizeTitle(record.title);
+        const userJudgment = localJudgments[`sciXDev_${recordId}`];
+        if (userJudgment !== undefined) {
+          addJudgment(record, userJudgment, 'SciX Development');
         }
       });
 
