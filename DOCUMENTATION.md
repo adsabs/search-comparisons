@@ -22,11 +22,15 @@ The Search Comparisons Tool is a comprehensive web application designed to compa
 - Python 3.8+
 - Node.js and npm/pnpm
 - API keys for external services (ADS, Web of Science, etc.)
+- **Ollama** for query intent service (see [LLM Service Issues](#llm-service-issues) for setup)
 
 ### Run the frontend and backened
 ```bash
 # Project directory
 cd search-comparisons
+
+# Start Ollama server (in separate terminal)
+ollama serve
 
 # Start both frontend and backend
 ./startup.sh
@@ -477,6 +481,8 @@ This tool enables systematic comparison of search algorithms, ranking functions,
 
 #### Query Intent Transformation
 **POST** `/api/query-intent/transform`
+
+*Note: Requires Ollama server running locally. See [LLM Service Issues](#llm-service-issues) for setup.*
 
 ```json
 {
@@ -1286,26 +1292,75 @@ app.add_middleware(
 
 #### LLM Service Issues
 
-**Problem**: Query intent transformation fails
-```
-ERROR: Ollama connection refused
+**Problem**: Query-intent calls fail with `ERROR: Ollama connection refused` or hang indefinitely.
+
+**Fast checklist**
+
+1. Install & run Ollama (no Docker needed):
+
+   ```bash
+   # Install once
+   curl -L https://ollama.ai/install.sh | sh      # Linux/macOS
+   # Start the local server
+   ollama serve                                   # keeps running in this terminal
+   ```
+
+2. Pull or verify the model used by the backend (defaults to phi:2.7b):
+
+   ```bash
+   ollama list            # shows installed models
+   ollama pull phi:2.7b   # or any other model you set in $LLM_MODEL_NAME
+   ```
+
+3. Smoke test the endpoint:
+
+   ```bash
+   curl -s http://localhost:11434/api/generate \
+       -d '{"model":"phi:2.7b","prompt":"Hello","stream":false}'
+   ```
+
+4. Hit the backend health-check:
+
+   ```bash
+   curl http://localhost:8001/query-intent/health
+   ```
+
+   You should get:
+
+   ```json
+   {"status":"healthy","llm":{"status":"ok","model":"phi:2.7b","message":"LLM service is operational"}}
+   ```
+
+If any step fails, consult the detailed troubleshooting table below.
+
+| Symptom | Likely cause | Fix |
+|---------|--------------|-----|
+| `Connection refused` | `ollama serve` not running | Start it or check port 11434 |
+| `model not found` | Model not pulled | `ollama pull <model>` |
+| `OOM / killed` | Model too big for RAM/GPU | Switch to `phi:2.7b` or `gemma:2b` |
+| Long first reply | Model still loading | Wait; subsequent calls are faster |
+
+**Switching providers**  
+If you prefer OpenAI or HuggingFace:
+
+```bash
+export LLM_PROVIDER=openai
+export OPENAI_API_KEY=sk-…
+# optional overrides:
+export LLM_MODEL_NAME=gpt-3.5-turbo
+export LLM_API_ENDPOINT=https://api.openai.com/v1/chat/completions
 ```
 
-**Solutions**:
-1. Ensure Ollama container is running:
-```bash
-docker-compose ps ollama
-```
+**Backend Configuration**  
+The backend automatically discovers the LLM service using these defaults:
+- `LLM_PROVIDER=ollama`
+- `LLM_API_ENDPOINT=http://localhost:11434/api/generate`  
+- `LLM_MODEL_NAME=phi:2.7b`
 
-2. Check model availability:
-```bash
-curl http://localhost:11434/api/tags
-```
+Override any setting via environment variables: `export LLM_MODEL_NAME=mistral:7b`
 
-3. Download required models:
-```bash
-docker exec -it ollama_container ollama pull mistral:7b
-```
+**Implementation Details**  
+The LLM service code is in `backend/app/services/query_intent/llm_service.py`. It pings `/api/tags` on startup to verify the model is available and implements lazy loading for better performance.
 
 #### Database Connection Issues
 

@@ -147,10 +147,12 @@ backend/
 The application uses environment variables for configuration. Key settings include:
 
 - `ADS_API_KEY`: NASA ADS API key
-- `LLM_PROVIDER`: LLM service provider (ollama, huggingface, openai)
-- `LLM_MODEL_NAME`: Model name for the LLM service
+- `LLM_PROVIDER`: LLM service provider (ollama, huggingface, openai) - defaults to ollama
+- `LLM_MODEL_NAME`: Model name for the LLM service - defaults to phi:2.7b
 - `LLM_TEMPERATURE`: Temperature setting for LLM generation
 - `LLM_MAX_TOKENS`: Maximum tokens for LLM generation
+
+**Note**: For local development, you must run `ollama serve` in a separate terminal before starting the application.
 - `CACHE_TTL`: Cache time-to-live in seconds
 - `CACHE_MAX_SIZE`: Maximum cache size
 
@@ -161,6 +163,7 @@ The application uses environment variables for configuration. Key settings inclu
 - Python 3.8+
 - Node.js and npm/pnpm
 - API keys for required services
+- Ollama installed and running (`ollama serve`)
 
 ### Setup
 
