@@ -61,6 +61,81 @@ pnpm dev
 
 ---
 
+## Similarity Tests: Evaluating ADS Similar() Operator Enhancement
+
+### Overview
+
+The Similarity Tests feature provides a comparative evaluation framework for assessing the effectiveness of the ADS/SciX `similar()` operator against embeddings-based similarity approaches. This experimental tool serves as a testbed for future algorithm improvements and helps guide the transition from the current similar() operator to more efficient embeddings-based methods.
+
+### Current Implementation
+
+The Similarity Tests interface displays side-by-side comparisons between:
+- **Set A (ADS similar() operator)**: Traditional similarity results using ADS's current algorithmic approach
+- **Set B (Embeddings approach)**: Results generated using modern vector embeddings and cosine similarity
+
+Each comparison includes:
+- **Multi-LLM evaluation scores**: Relevance judgments from Claude, Gemini, and DeepSeek models
+- **NDCG@10 metrics**: Quantitative ranking quality assessment 
+- **Paper metadata**: Full bibliographic information, abstracts, and publication details
+- **Interactive scoring interface**: Manual relevance judgment collection capabilities
+
+### Purpose and Testing Scope
+
+Currently, the feature contains placeholder test data based on the comparison paper `2022ApJ...931...44P` ("RESOLVE and ECO: Finding Low-metallicity z ∼ 0 Dwarf AGN Candidates Using Optimized Emission-line Diagnostics"). This serves as a proof-of-concept demonstrating:
+
+1. **Algorithm comparison methodology**: Framework for systematic evaluation of different similarity approaches
+2. **Multi-modal evaluation**: Combining LLM-based and human relevance judgments
+3. **Performance metrics**: NDCG@10 scoring for ranking quality assessment
+4. **User interface design**: Interactive comparison visualization for researchers
+
+### Future Development Roadmap
+
+The Similarity Tests feature is planned for significant expansion to support ADS/SciX's transition to embeddings-based similarity search:
+
+#### Phase 1: Human Evaluation Pipeline Integration
+- **Expert reviewer interface**: Streamlined workflow for domain experts to provide relevance judgments
+- **Batch evaluation capabilities**: Tools for processing large datasets of similarity comparisons
+- **Inter-annotator agreement tracking**: Statistical analysis of judgment consistency across evaluators
+- **Ground truth dataset creation**: Building validated similarity benchmarks for various astronomical domains
+
+#### Phase 2: LLM Evaluation Pipeline Enhancement  
+- **Multi-model ensemble evaluation**: Expanding beyond the current Claude/Gemini/DeepSeek trio to include specialized scientific LLMs
+- **Domain-specific prompt engineering**: Optimizing evaluation prompts for different astronomical subfields (stellar, galactic, cosmology, etc.)
+- **Confidence scoring**: Implementing uncertainty measures for LLM-based judgments
+- **Automated evaluation workflows**: Continuous assessment of similarity algorithm changes
+
+#### Phase 3: Embeddings Comparison Database
+- **Large-scale embeddings repository**: Comprehensive database of paper embeddings across the full ADS corpus
+- **Multiple embedding model testing**: Comparative evaluation of different pre-trained models (SciBERT, SpectraBERT, domain-specific variants)
+- **Embedding quality metrics**: Intrinsic evaluation measures for embedding representations
+- **Performance benchmarking**: Speed and accuracy comparisons between embedding approaches and the current similar() operator
+
+#### Phase 4: Production Integration Planning
+- **A/B testing framework**: Infrastructure for gradual rollout of embeddings-based similarity
+- **Performance monitoring**: Real-time tracking of similarity search quality and speed improvements
+- **Fallback mechanisms**: Robust systems for reverting to the original similar() operator if needed
+- **User feedback integration**: Channels for collecting researcher feedback on similarity result quality
+
+### Technical Architecture
+
+The Similarity Tests leverage the existing search comparison infrastructure:
+- **Frontend**: React component (`SimilarityTests.js`) with Material-UI interface
+- **Backend**: Integration with existing search services and comparison metrics
+- **Data storage**: JSON-based test datasets with structured evaluation results
+- **API endpoints**: RESTful services for retrieving and storing similarity evaluations
+
+### Research Applications
+
+This feature supports several research initiatives:
+1. **Algorithm validation**: Quantitative assessment of similarity algorithm improvements
+2. **Domain-specific tuning**: Optimizing similarity measures for different astronomical research areas  
+3. **User experience research**: Understanding how researchers interact with and perceive similarity results
+4. **Performance optimization**: Identifying bottlenecks and improvement opportunities in similarity search
+
+The Similarity Tests represent a crucial step toward modernizing ADS/SciX's similarity search capabilities while maintaining the high-quality results researchers depend on for discovery and literature review.
+
+---
+
 ## User Guide: Relevance Judgment Collection
 
 ### What You Do
