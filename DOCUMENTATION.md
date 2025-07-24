@@ -261,7 +261,7 @@ The Query Intent tab provides AI-powered query transformation using local LLM mo
    - **Live search results** from ADS using the improved query
 
 **Examples of transformations:**
-- `"papers by Jarmak"` → `author:"Jarmak, S" OR author:"Jarmak, Stephanie"`
+- `"papers by Alberto Accomazzi"` → `author:"Accomazzi, A" OR author:"Accomazzi, Alberto"`
 - `"Einstein black holes"` → `(author:"Einstein, A" OR author:"Einstein, Albert") AND abs:"black holes"`
 - `"trending exoplanets"` → `trending(abs:"exoplanets")`
 
