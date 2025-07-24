@@ -132,8 +132,6 @@ This feature supports several research initiatives:
 3. **User experience research**: Understanding how researchers interact with and perceive similarity results
 4. **Performance optimization**: Identifying bottlenecks and improvement opportunities in similarity search
 
-The Similarity Tests represent a crucial step toward modernizing ADS/SciX's similarity search capabilities while maintaining the high-quality results researchers depend on for discovery and literature review.
-
 ---
 
 ## User Guide: Relevance Judgment Collection
