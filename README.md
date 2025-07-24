@@ -152,7 +152,7 @@ The application uses environment variables for configuration. Key settings inclu
 - `LLM_TEMPERATURE`: Temperature setting for LLM generation
 - `LLM_MAX_TOKENS`: Maximum tokens for LLM generation
 
-**Note**: For local development, you must run `ollama serve` in a separate terminal before starting the application.
+**Note**: Ollama must be installed and running. The `./startup.sh` script automatically configures all services.
 - `CACHE_TTL`: Cache time-to-live in seconds
 - `CACHE_MAX_SIZE`: Maximum cache size
 

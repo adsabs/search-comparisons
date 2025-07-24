@@ -24,24 +24,28 @@ The Search Comparisons Tool is a comprehensive web application designed to compa
 - API keys for external services (ADS, Web of Science, etc.)
 - **Ollama** for query intent service (see [LLM Service Issues](#llm-service-issues) for setup)
 
-### Run the frontend and backened
+### Run the frontend and backend
 ```bash
 # Project directory
 cd search-comparisons
 
-# Start Ollama server (in separate terminal)
-ollama serve
-
-# Start both frontend and backend
+# Start both frontend and backend (handles all configuration automatically)
 ./startup.sh
 ```
-Notes:
-Frontend: http://localhost:3001
-Backend API: http://localhost:8001
+**Notes:**
+- Frontend: http://localhost:3001
+- Backend API: http://localhost:8001  
+- API Docs: http://localhost:8001/docs
 
-Environment variable API keys should already be set, these are modifiable in backend/.env
+**What the startup script does:**
+- Automatically configures frontend-backend connection
+- Starts backend on port 8001 and frontend on port 3001
+- Creates Python virtual environment if needed
+- Sets up environment variables correctly
 
-The startup script automatically builds the venv in the directory, any additional dependencies should be installed using this virtual environment
+**Prerequisites:**
+- Ollama must be installed and running (usually runs as system service)
+- If query intent features don't work, see [LLM Service Issues](#llm-service-issues)
 
 ### Alternative: Manual Development Separating Front and Backend
 ```bash
@@ -115,6 +119,28 @@ The interface where judgements are collected is located under Experiments -> Rel
 - **When comparing results** look at the relative NCDG@10 scores to get an idea of which set of results are better for the given query
 - **Click Submit Judgements** when you want to add your judgements to the database (all submitted judgements are viewable in the Judgements Database tab)
 - **Click Export Judgements** to generate a comprehensive report that includes your recorded judgements, notes, selected configurations, etc.
+
+### Query Intent Feature
+
+The Query Intent tab provides AI-powered query transformation using local LLM models:
+
+1. **Navigate to Experiments → Query Intent**
+2. **Enter a natural language query** like:
+   - "papers by Stephen Hawking about black holes"
+   - "recent work on exoplanets by Mayor"
+   - "trending papers on dark matter"
+3. **Click "Analyze Intent"** to see:
+   - **Intent classification** (author, topic, author_topic, etc.)
+   - **Transformed query** using proper ADS search syntax
+   - **Explanation** of the transformation
+   - **Live search results** from ADS using the improved query
+
+**Examples of transformations:**
+- `"papers by Jarmak"` → `author:"Jarmak, S" OR author:"Jarmak, Stephanie"`
+- `"Einstein black holes"` → `(author:"Einstein, A" OR author:"Einstein, Albert") AND abs:"black holes"`
+- `"trending exoplanets"` → `trending(abs:"exoplanets")`
+
+**Requirements:** Ollama must be running with a compatible model (qwen2:7b or phi:2.7b). The startup script handles configuration automatically.
 
 ---
 
@@ -1294,51 +1320,83 @@ app.add_middleware(
 
 **Problem**: Query-intent calls fail with `ERROR: Ollama connection refused` or hang indefinitely.
 
-**Fast checklist**
+**Quick Status Check**
 
-1. Install & run Ollama (no Docker needed):
+The startup script (`./startup.sh`) automatically configures the frontend-backend connection. If query intent isn't working:
 
+1. **Check if Ollama is running**:
    ```bash
-   # Install once
-   curl -L https://ollama.ai/install.sh | sh      # Linux/macOS
-   # Start the local server
-   ollama serve                                   # keeps running in this terminal
+   ps aux | grep ollama  # Should show ollama process
+   curl -s http://localhost:11434/api/tags  # Should return JSON with models
    ```
 
-2. Pull or verify the model used by the backend (defaults to phi:2.7b):
-
+2. **Check available models**:
    ```bash
-   ollama list            # shows installed models
-   ollama pull phi:2.7b   # or any other model you set in $LLM_MODEL_NAME
+   ollama list  # Should show qwen2:7b or phi:2.7b
    ```
 
-3. Smoke test the endpoint:
-
+3. **Test the query intent endpoint**:
    ```bash
-   curl -s http://localhost:11434/api/generate \
-       -d '{"model":"phi:2.7b","prompt":"Hello","stream":false}'
+   curl -s -X POST http://localhost:8001/api/intent-transform-query \
+       -H "Content-Type: application/json" \
+       -d '{"query": "papers by Einstein"}'
    ```
 
-4. Hit the backend health-check:
+**If Ollama Stopped Running**
 
+Ollama typically runs as a system service. If it's not running:
+
+1. **Start Ollama** (usually starts automatically):
    ```bash
-   curl http://localhost:8001/query-intent/health
+   # If not running as service, start manually:
+   ollama serve &
    ```
 
-   You should get:
-
-   ```json
-   {"status":"healthy","llm":{"status":"ok","model":"phi:2.7b","message":"LLM service is operational"}}
+2. **Verify the required model is available**:
+   ```bash
+   ollama list
+   # If qwen2:7b is missing:
+   ollama pull qwen2:7b
    ```
 
-If any step fails, consult the detailed troubleshooting table below.
+**Changing the LLM Model**
+
+The backend currently uses `qwen2:7b` by default. To change models:
+
+1. **Set environment variable**:
+   ```bash
+   export LLM_MODEL_NAME=phi:2.7b  # or mistral:7b, llama2:7b, etc.
+   ```
+
+2. **Pull the new model**:
+   ```bash
+   ollama pull phi:2.7b  # or whatever model you chose
+   ```
+
+3. **Restart the backend** for changes to take effect
+
+**Initial Setup** (if Ollama not installed):
+
+```bash
+# Install Ollama (one time only)
+curl -L https://ollama.ai/install.sh | sh      # Linux/macOS
+
+# Pull the default model
+ollama pull qwen2:7b
+
+# Verify installation
+ollama list
+```
+
+**Troubleshooting Common Issues**
 
 | Symptom | Likely cause | Fix |
 |---------|--------------|-----|
-| `Connection refused` | `ollama serve` not running | Start it or check port 11434 |
+| `Connection refused` | Ollama not running | `ollama serve &` or restart system service |
 | `model not found` | Model not pulled | `ollama pull <model>` |
 | `OOM / killed` | Model too big for RAM/GPU | Switch to `phi:2.7b` or `gemma:2b` |
-| Long first reply | Model still loading | Wait; subsequent calls are faster |
+| Long first reply | Model loading | Wait; subsequent calls are faster |
+| Frontend shows "no response" | Port mismatch | Use `./startup.sh` (auto-fixes) |
 
 **Switching providers**  
 If you prefer OpenAI or HuggingFace:
