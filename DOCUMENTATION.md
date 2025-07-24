@@ -61,6 +61,122 @@ pnpm dev
 
 ---
 
+## User Guide: Relevance Judgment Collection
+
+### What You Do
+As a relevance judgment user, you evaluate search results from multiple engines to help improve search quality. Your judgments feed into metrics that guide search algorithm development.
+
+### Interface Overview
+The interface where judgements are collected is located under Experiments -> Relevance Judgements.
+
+**Search Configuration**
+- **Search Query Box**: What you input here gets passed as the query for the academic search engines
+- **Information Need Box**: Write a short description about what you hope your query will get you
+- **Search Button**: Performs the search across each academic search engine
+- **Show Previous Judgements Toggle**: If previous judgements exist for returned records you can turn this on to see 
+
+**Ranking Results**
+- **Submit Judgements Button**: Greyed out until you enter judgements. Once you enter judgements you can click this to add the judgements to the database.
+- **Export Judgements**: Export recorded judgements as a comprehensive report including other information about the current setup including the query, information need, timestamp, NDCG@10 scores, boost configuration, judgements, and notes.
+- **Show/Hide Boost Controls**: You can toggle the boost controls on and off depending on whether you need them to be shown.
+- **Comparison Engine Dropdwon**: Select the search engine you want to compare with on the right side including Google Scholar, Web of Science, Semantic Scholar, and SciX Development.
+- **Original Results**: Results from ADS/SciX sorted by relevance. Click the v button to pop out the abstract. The record includes the Title, publication year, citation count, collection, a drop down for relevance judgement selection, and a button to 'Add Note' to accompany your judgement score. If 'Show Previous Judgements' is toggled on the record also displays previous judgement scores associated with this record and their source (no labeled source if from the web tool, Quepid if from Quepid).
+- **Boosted Results**: Re-ranked results based on modifications to the boost controls available on the left side. No results are displayed by default. To populate the results you need to select 'Run Boost Experiment'. The displayed record information types are identical to the Original Results records.
+- **XX Results**: Results from the selected Comparison Engine using the drop down menu above. The displayed record information types are identical to the others except for the collection.
+
+**Boost Controls**
+- **Run Boost Experiment**: Once you select your boost configuration settings click Run Boost Experiment to populate results in the middle results column under Boosted Results.
+- **ADS Query Field Weights**: Boxes to enter in values for author, year, title, abstract, and keyword weights used by the relevance algorithm.
+- **Citation Boost**: A boost factor that includes the citation count.
+- **Recency Boost**: The first box value controls the overall strength of the recency boost. The second box value controls how quickly the recency boost decays with age.
+- **Document Type Boost**: Boxes to enter rankings of importance for various document types that will be boosted based on their relative importance.
+- **Collection Boost**: Boxes to enter boost values for the collections in ADS/SciX.
+- **Refereed Boost**: A box to enter a boost factor to boost refereed papers.
+- **Boost Weights**: Boxes to enter values to control how much each boost type contributes to the final score including citation count, recency, document type, collection, and whether the paper is refereed.
+
+
+### Step-by-Step Workflow
+
+#### 1. Starting a Search Comparison
+1. Open http://localhost:3001 in your browser
+2. Navigate to the "Experiments" tab
+3. Stay on the "Relevance Judgements" tab
+4. Enter your search query in the search query text box
+5. Click the Search button
+6. Original Results displayed on the right are the results retrieved from ADS/SciX sorted by relevance for your input query
+7. Boosted results by default will not show up until you run a boost experiment
+8. The results in the right are modifiable based on the selected Comparison Engine (Google Scholar is default, other options include Semantic Scholar, Web of Science, and SciX Development). 
+9. The default number of results is 10 but you can click 'Load More' to load 10 more at a time.
+
+#### 2. Evaluating Results
+- **Make sure to provide an information need** it helps us better understand the scores
+- **Click the v button to pop out the abstract** please read it and the title before scoring
+- **Add a score of 3, 2, 1, or 0**, where 3 is exactly what you wanted, 2 you would be happy with but isn't perfect, 1 is marginally relevant, and 0 is completely irrelevant.
+- **Judge at least the first 10 results** per engine
+- **Be consistent** with your rating scale across queries
+- **Consider your information need**: What are you hoping to see with this query?
+- **Focus on content relevance**, not just keyword matching
+- **When comparing results** look at the relative NCDG@10 scores to get an idea of which set of results are better for the given query
+- **Click Submit Judgements** when you want to add your judgements to the database (all submitted judgements are viewable in the Judgements Database tab)
+- **Click Export Judgements** to generate a comprehensive report that includes your recorded judgements, notes, selected configurations, etc.
+
+
+  ---
+  
+### Relevance Judgements Database
+
+The Relevance Judgements Database is a comprehensive interface for managing and analyzing all collected relevance judgements. This database is populated when users click the **Submit Judgements** button on the relevance judgements page, storing all evaluation data for analysis and export.
+
+#### Accessing the Database
+Navigate to **Experiments → Judgements Database** to view all stored relevance judgements.
+
+#### Key Features
+
+**Filtering and Search:**
+- **Query Filter**: Search judgements by the original search query text
+- **Rater ID Filter**: Filter by specific evaluator/rater identification
+- **Source Filter**: Filter by search engine source (ADS, Google Scholar, Semantic Scholar, Web of Science)
+- **Score Filter**: Filter by relevance score (Perfect/1.0, Good/0.67, Fair/0.33, Poor/0.0)
+
+**Data Management:**
+- **Individual Deletion**: Remove specific judgements using the delete button on each row
+- **Sortable Columns**: Click column headers to sort by query, title, source, score, or date
+- **Pagination**: Navigate through large datasets with configurable rows per page
+
+**Export Capabilities:**
+- **Export All**: Download complete judgements database in CSV or TXT format
+- **Export Filtered**: Export only the currently filtered subset of judgements
+- **Smart Filenames**: Exported files include query names or timestamps for easy identification
+- **Structured Format**: Exports include query, title, source, score, score label, notes, date, and rater ID
+
+**Display Information:**
+Each judgement record shows:
+- Original search query
+- Paper title and source (with color-coded chips)
+- Relevance score with descriptive labels (Perfect, Good, Fair, Poor)
+- Evaluation notes (if provided)
+- Creation timestamp
+- Rater identification
+
+#### Database Schema
+The judgements database stores:
+- `query`: Original search query text
+- `record_title`: Paper/document title
+- `record_source`: Search engine source
+- `judgement_score`: Numeric relevance score (0, 0.33, 0.67, 1.0)
+- `judgement_note`: Optional evaluation notes
+- `rater_id`: Evaluator identification
+- `created_at`: Timestamp of judgement creation
+
+#### Use Cases
+- **Performance Analysis**: Compare search engine effectiveness across different queries
+- **Rater Agreement Studies**: Analyze consistency between different evaluators
+- **Query-Specific Research**: Export judgements for specific search terms for detailed analysis
+- **Algorithm Development**: Use collected judgements to train and validate search ranking improvements
+- **Quality Assurance**: Review and clean evaluation data before analysis
+
+  ---
+
 ## Similarity Tests: Evaluating ADS Similar() Operator Enhancement
 
 ### Overview
@@ -132,120 +248,10 @@ This feature supports several research initiatives:
 3. **User experience research**: Understanding how researchers interact with and perceive similarity results
 4. **Performance optimization**: Identifying bottlenecks and improvement opportunities in similarity search
 
----
 
-## User Guide: Relevance Judgment Collection
-
-### What You Do
-As a relevance judgment user, you evaluate search results from multiple engines to help improve search quality. Your judgments feed into metrics that guide search algorithm development.
-
-### Interface Overview
-The interface where judgements are collected is located under Experiments -> Relevance Judgements.
-
-**Search Configuration**
-- **Search Query Box**: What you input here gets passed as the query for the academic search engines
-- **Information Need Box**: Write a short description about what you hope your query will get you
-- **Search Button**: Performs the search across each academic search engine
-- **Show Previous Judgements Toggle**: If previous judgements exist for returned records you can turn this on to see 
-
-**Ranking Results**
-- **Submit Judgements Button**: Greyed out until you enter judgements. Once you enter judgements you can click this to add the judgements to the database.
-- **Export Judgements**: Export recorded judgements as a comprehensive report including other information about the current setup including the query, information need, timestamp, NDCG@10 scores, boost configuration, judgements, and notes.
-- **Show/Hide Boost Controls**: You can toggle the boost controls on and off depending on whether you need them to be shown.
-- **Comparison Engine Dropdwon**: Select the search engine you want to compare with on the right side including Google Scholar, Web of Science, Semantic Scholar, and SciX Development.
-- **Original Results**: Results from ADS/SciX sorted by relevance. Click the v button to pop out the abstract. The record includes the Title, publication year, citation count, collection, a drop down for relevance judgement selection, and a button to 'Add Note' to accompany your judgement score. If 'Show Previous Judgements' is toggled on the record also displays previous judgement scores associated with this record and their source (no labeled source if from the web tool, Quepid if from Quepid).
-- **Boosted Results**: Re-ranked results based on modifications to the boost controls available on the left side. No results are displayed by default. To populate the results you need to select 'Run Boost Experiment'. The displayed record information types are identical to the Original Results records.
-- **XX Results**: Results from the selected Comparison Engine using the drop down menu above. The displayed record information types are identical to the others except for the collection.
-
-**Boost Controls**
-- **Run Boost Experiment**: Once you select your boost configuration settings click Run Boost Experiment to populate results in the middle results column under Boosted Results.
-- **ADS Query Field Weights**: Boxes to enter in values for author, year, title, abstract, and keyword weights used by the relevance algorithm.
-- **Citation Boost**: A boost factor that includes the citation count.
-- **Recency Boost**: The first box value controls the overall strength of the recency boost. The second box value controls how quickly the recency boost decays with age.
-- **Document Type Boost**: Boxes to enter rankings of importance for various document types that will be boosted based on their relative importance.
-- **Collection Boost**: Boxes to enter boost values for the collections in ADS/SciX.
-- **Refereed Boost**: A box to enter a boost factor to boost refereed papers.
-- **Boost Weights**: Boxes to enter values to control how much each boost type contributes to the final score including citation count, recency, document type, collection, and whether the paper is refereed.
-
-
-### Step-by-Step Workflow
-
-#### 1. Starting a Search Comparison
-1. Open http://localhost:3001 in your browser
-2. Navigate to the "Experiments" tab
-3. Stay on the "Relevance Judgements" tab
-4. Enter your search query in the search query text box
-5. Click the Search button
-6. Original Results displayed on the right are the results retrieved from ADS/SciX sorted by relevance for your input query
-7. Boosted results by default will not show up until you run a boost experiment
-8. The results in the right are modifiable based on the selected Comparison Engine (Google Scholar is default, other options include Semantic Scholar, Web of Science, and SciX Development). 
-9. The default number of results is 10 but you can click 'Load More' to load 10 more at a time.
-
-#### 2. Evaluating Results
-- **Make sure to provide an information need** it helps us better understand the scores
-- **Click the v button to pop out the abstract** please read it and the title before scoring
-- **Add a score of 3, 2, 1, or 0**, where 3 is exactly what you wanted, 2 you would be happy with but isn't perfect, 1 is marginally relevant, and 0 is completely irrelevant.
-- **Judge at least the first 10 results** per engine
-- **Be consistent** with your rating scale across queries
-- **Consider your information need**: What are you hoping to see with this query?
-- **Focus on content relevance**, not just keyword matching
-- **When comparing results** look at the relative NCDG@10 scores to get an idea of which set of results are better for the given query
-- **Click Submit Judgements** when you want to add your judgements to the database (all submitted judgements are viewable in the Judgements Database tab)
-- **Click Export Judgements** to generate a comprehensive report that includes your recorded judgements, notes, selected configurations, etc.
-
-### Relevance Judgements Database
-
-The Relevance Judgements Database is a comprehensive interface for managing and analyzing all collected relevance judgements. This database is populated when users click the **Submit Judgements** button on the relevance judgements page, storing all evaluation data for analysis and export.
-
-#### Accessing the Database
-Navigate to **Experiments → Judgements Database** to view all stored relevance judgements.
-
-#### Key Features
-
-**Filtering and Search:**
-- **Query Filter**: Search judgements by the original search query text
-- **Rater ID Filter**: Filter by specific evaluator/rater identification
-- **Source Filter**: Filter by search engine source (ADS, Google Scholar, Semantic Scholar, Web of Science)
-- **Score Filter**: Filter by relevance score (Perfect/1.0, Good/0.67, Fair/0.33, Poor/0.0)
-
-**Data Management:**
-- **Individual Deletion**: Remove specific judgements using the delete button on each row
-- **Sortable Columns**: Click column headers to sort by query, title, source, score, or date
-- **Pagination**: Navigate through large datasets with configurable rows per page
-
-**Export Capabilities:**
-- **Export All**: Download complete judgements database in CSV or TXT format
-- **Export Filtered**: Export only the currently filtered subset of judgements
-- **Smart Filenames**: Exported files include query names or timestamps for easy identification
-- **Structured Format**: Exports include query, title, source, score, score label, notes, date, and rater ID
-
-**Display Information:**
-Each judgement record shows:
-- Original search query
-- Paper title and source (with color-coded chips)
-- Relevance score with descriptive labels (Perfect, Good, Fair, Poor)
-- Evaluation notes (if provided)
-- Creation timestamp
-- Rater identification
-
-#### Database Schema
-The judgements database stores:
-- `query`: Original search query text
-- `record_title`: Paper/document title
-- `record_source`: Search engine source
-- `judgement_score`: Numeric relevance score (0, 0.33, 0.67, 1.0)
-- `judgement_note`: Optional evaluation notes
-- `rater_id`: Evaluator identification
-- `created_at`: Timestamp of judgement creation
-
-#### Use Cases
-- **Performance Analysis**: Compare search engine effectiveness across different queries
-- **Rater Agreement Studies**: Analyze consistency between different evaluators
-- **Query-Specific Research**: Export judgements for specific search terms for detailed analysis
-- **Algorithm Development**: Use collected judgements to train and validate search ranking improvements
-- **Quality Assurance**: Review and clean evaluation data before analysis
-
-### Query Intent Feature
+  ---
+  
+## Query Intent Feature
 
 The Query Intent tab provides AI-powered query transformation using local LLM models:
 
