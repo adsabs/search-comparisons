@@ -30,14 +30,13 @@ cd search-comparisons
 
 # Start both frontend and backend
 ./startup.sh
-
-# Access the application
-# Frontend: http://localhost:3001
-# Backend API: http://localhost:8001
-
-# Environment variable API keys should already be set, these are modifiable in backend/.env
-# The startup script automatically builds the venv in the directory, any additional dependencies needed will need to be installed using this virtual environment
 ```
+Notes:
+Frontend: http://localhost:3001
+Backend API: http://localhost:8001
+
+Environment variable API keys should already be set, these are modifiable in backend/.env
+The startup script automatically builds the venv in the directory, any additional dependencies needed will need to be installed using this virtual environment
 
 ### Alternative: Manual Development Separating Front and Backend
 ```bash
