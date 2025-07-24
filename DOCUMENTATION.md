@@ -142,6 +142,49 @@ The Query Intent tab provides AI-powered query transformation using local LLM mo
 
 **Requirements:** Ollama must be running with a compatible model (qwen2:7b or phi:2.7b). The startup script handles configuration automatically.
 
+#### How Query Intent Transformation Works
+
+The system uses **few-shot prompting** with curated examples to teach the LLM how to transform natural language queries into precise ADS search syntax. The LLM learns from these patterns:
+
+**Intent Classification Types:**
+- `topic` - Pure subject matter queries
+- `author` - Author-only searches  
+- `author_year` - Author with specific year
+- `author_year_range` - Author with date range
+- `author_topic` - Combined author and subject
+- `author_topic_influential` - Seeking highly-cited papers
+- `topic_trending` - Current/popular papers on topic
+- `topic_review` - Review papers on topic
+- `similar` - Papers similar to a reference
+- `related` - Papers related to a topic
+
+**Key Training Examples:**
+
+| Natural Language | Intent | ADS Query |
+|------------------|---------|-----------|
+| "papers about black holes" | `topic` | `abs:"black holes"` |
+| "papers by Stephanie Jarmak" | `author` | `author:"Jarmak, S" OR author:"Jarmak, Stephanie"` |
+| "Jarmak 2020" | `author_year` | `(author:"Jarmak, S" OR author:"Jarmak, Stephanie") AND year:2020` |
+| "trending papers on exoplanets" | `topic_trending` | `trending(abs:"exoplanets")` |
+| "review papers on dark matter" | `topic_review` | `reviews(abs:"dark matter")` |
+| "popular papers by Hawking on black holes" | `author_topic_influential` | `(author:"Hawking, S" OR author:"Hawking, Stephen") AND abs:"black holes"` |
+
+**Critical Transformation Rules:**
+1. **Author format**: Always use `author:"Lastname, F" OR author:"Lastname, Firstname"`
+2. **Topic separation**: Never mix topics with author fields - use `AND` to combine
+3. **Year precision**: Single years use `year:2020`, ranges use `year:[2020 TO 2023]`
+4. **Intent modifiers**: Words like "popular", "highly cited" affect sorting, not the query itself
+5. **Special operators**: `trending()`, `reviews()`, `similar()`, `related()` for specific searches
+
+**Customizing Examples:**
+To modify the training examples, edit [`backend/app/services/query_intent/llm_service.py`](file:///home/scixmuse/search-comparisons/backend/app/services/query_intent/llm_service.py#L355-L409) in the `format_prompt()` method. Add new examples following the same pattern:
+```
+Original: "your example query"
+Intent: classification_type
+Explanation: Brief description of what the user wants
+Transformed: proper_ads_syntax
+```
+
 ---
 
 ## Developer Guide: Adding Features
@@ -298,6 +341,43 @@ export enum SearchEngine {
 ```
 
 Update `frontend/src/components/SearchEngineSelector.tsx` to include the new option.
+
+### Customizing Query Intent Transformation
+
+The LLM-powered query transformation system can be customized by modifying the few-shot examples and rules.
+
+#### Modifying Training Examples
+
+Edit [`backend/app/services/query_intent/llm_service.py`](file:///home/scixmuse/search-comparisons/backend/app/services/query_intent/llm_service.py#L355-L409) in the `format_prompt()` method:
+
+```python
+# Add new examples to the prompt template
+Original: "recent work on asteroids"
+Intent: topic_recent
+Explanation: Looking for recent papers about asteroids
+Transformed: abs:"asteroids" # sorted by recency in post-processing
+
+Original: "highly cited papers on cosmology"  
+Intent: topic_influential
+Explanation: Looking for influential papers on cosmology
+Transformed: abs:"cosmology" # sorted by citation_count in post-processing
+```
+
+#### Adding New Intent Classifications
+
+1. **Add new intent type** to the list in the prompt template
+2. **Update the parsing logic** in `interpret_query()` to handle the new intent
+3. **Add sorting logic** in `search_with_transformed_query()` for intent-specific ranking
+
+#### Testing Query Transformations
+
+Use the API endpoint to test transformations:
+
+```bash
+curl -X POST http://localhost:8001/api/intent-transform-query \
+  -H "Content-Type: application/json" \
+  -d '{"query": "your test query"}'
+```
 
 ### Adding New Metrics
 
@@ -1374,6 +1454,22 @@ The backend currently uses `qwen2:7b` by default. To change models:
    ```
 
 3. **Restart the backend** for changes to take effect
+
+**Improving Query Transformations**
+
+If the LLM isn't transforming queries as expected, you can:
+
+1. **Add more training examples** to [`llm_service.py`](file:///home/scixmuse/search-comparisons/backend/app/services/query_intent/llm_service.py#L355-L409)
+2. **Test specific patterns** with the `/api/intent-transform-query` endpoint
+3. **Adjust the model** - larger models (like `qwen2:7b`) generally perform better than smaller ones (`phi:2.7b`)
+
+Example of adding a new pattern:
+```python
+Original: "machine learning papers from ICML"
+Intent: topic_venue
+Explanation: Looking for machine learning papers from ICML conference
+Transformed: abs:"machine learning" AND pub:"ICML"
+```
 
 **Initial Setup** (if Ollama not installed):
 
