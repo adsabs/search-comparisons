@@ -867,6 +867,266 @@ for config in field_configs:
     print(f"Config {config}: nDCG={data['comparison']['ndcg@10']['ads']:.3f}")
 ```
 
+### Boost Configuration Implementation
+
+The boost configurations are applied in the backend through several key components that modify relevance scores based on different parameters.
+
+#### Field Boost Implementation
+
+ADS Query Field Weights are transformed into Solr query syntax:
+
+```python
+# backend/app/services/query_transformation.py
+def transform_query_with_boosts(query: str, field_boosts: Dict[str, float]) -> str:
+    """Transform a query by applying field boosts and generating combinations."""
+    if not query or not field_boosts:
+        return query
+
+    # Sort fields by boost value in descending order
+    sorted_fields = sorted(field_boosts.items(), key=lambda x: (-x[1], x[0]))
+    
+    parts = []
+    
+    # Process each field in order of boost value
+    for field, boost in sorted_fields:
+        # Add single terms with field boost
+        for term in terms:
+            parts.append(f'{field}:{term}^{boost}')
+            
+        # Add phrase combinations with field boost
+        for phrase in phrases:
+            parts.append(f'{field}:"{phrase}"^{boost}')
+
+    return ' OR '.join(parts)
+```
+
+#### Citation Count Boost Implementation
+
+Citation boost uses log scaling based on collection and publication year:
+
+```python
+# backend/app/services/boost_service.py
+def calculate_citation_boost(
+    citation_count: int,
+    collection: str,
+    pub_year: int,
+    citation_distributions: Dict[str, Dict[int, Dict[str, float]]]
+) -> float:
+    """Calculate citation boost based on citation count."""
+    try:
+        # Get distribution for collection and year
+        dist = citation_distributions.get(collection, {}).get(pub_year, {})
+        median = dist.get('median', 0)
+        
+        if median == 0:
+            return 0.0
+            
+        # Calculate boost relative to median using log scale
+        return math.log1p(citation_count / median)
+    except Exception as e:
+        logger.error(f"Error calculating citation boost: {str(e)}")
+        return 0.0
+```
+
+#### Recency Boost Implementation
+
+Recency boost uses reciprocal function based on publication age:
+
+```python
+# backend/app/services/boost_service.py
+def calculate_recency_boost(pubdate: str, multiplier: float = 1.0) -> float:
+    """Calculate recency boost using reciprocal function."""
+    try:
+        # Parse publication date
+        pub_date = parse(pubdate)
+        now = datetime.now()
+        
+        # Calculate age in months
+        age_months = ((now.year - pub_date.year) * 12 + 
+                     (now.month - pub_date.month))
+        
+        # Apply reciprocal function: 1 / (1 + multiplier * age_months)
+        return 1.0 / (1.0 + multiplier * age_months)
+    except (ValueError, TypeError):
+        logger.warning(f"Invalid publication date: {pubdate}")
+        return 0.0
+```
+
+#### Document Type Boost Implementation
+
+Document type boost uses rank-based even distribution:
+
+```python
+# backend/app/services/boost_service.py
+DEFAULT_DOCTYPE_RANKS = {
+    'article': 1,      # Journal article
+    'eprint': 1,       # Article preprinted in arXiv
+    'inproceedings': 2,# Article appearing in conference proceedings
+    'abstract': 5,     # Meeting abstract
+    'book': 1,         # Book (monograph)
+    'phdthesis': 3,    # PhD thesis
+    'misc': 8,         # Anything not in the above list
+    # ... more types
+}
+
+def calculate_doctype_boost(doctype: str, doctype_ranks: Dict[str, int] = None) -> float:
+    """Calculate document type boost based on rank using even distribution."""
+    doctype_ranks = doctype_ranks or DEFAULT_DOCTYPE_RANKS
+    rank = doctype_ranks.get(doctype.lower(), doctype_ranks['other'])
+    
+    # Get unique ranks and sort them
+    unique_ranks = sorted(set(doctype_ranks.values()))
+    
+    # Calculate boost factor using even distribution
+    rank_index = unique_ranks.index(rank)
+    num_unique_ranks = len(unique_ranks)
+    
+    if num_unique_ranks <= 1:
+        return 1.0
+        
+    return 1.0 - (rank_index / (num_unique_ranks - 1))
+```
+
+#### Collection Boost Implementation
+
+Collection boost handles multi-collection papers with averaging:
+
+```python
+# backend/app/services/boost_service.py
+def calculate_collection_boost(collection: str, collection_boosts: Dict[str, float]) -> float:
+    """Calculate collection boost based on numerical multipliers."""
+    if not collection or not collection_boosts:
+        return 1.0
+    
+    # Handle multiple collections separated by comma
+    collections = [c.strip().lower() for c in collection.split(',')]
+    
+    total_boost = 0.0
+    num_collections = len(collections)
+    
+    for coll in collections:
+        boost = collection_boosts.get(coll, 1.0)
+        total_boost += boost
+    
+    # For single collections, filter out if boost is 0.0
+    if num_collections == 1:
+        if total_boost == 0.0:
+            return 0.0  # Filter out single collection with 0.0 boost
+        return total_boost
+    
+    # For multiple collections, return the average
+    return total_boost / num_collections
+```
+
+#### Boost Combination Methods
+
+All individual boosts are combined using configurable methods:
+
+```python
+# backend/app/services/boost_service.py
+def combine_boost_factors(
+    boosts: Dict[str, float],
+    weights: Dict[str, float] = None,
+    combination_method: str = 'weighted_sum'
+) -> float:
+    """Combine boost factors using the specified combination method."""
+    if combination_method == 'simple_product':
+        # Multiply all boosts together
+        return math.prod(valid_boosts.values())
+        
+    elif combination_method == 'simple_sum':
+        # Add all boosts together
+        return sum(valid_boosts.values())
+        
+    elif combination_method == 'weighted_geometric_mean':
+        # Calculate weighted geometric mean
+        weighted_products = [
+            math.pow(valid_boosts.get(boost_type, 0.0), weight)
+            for boost_type, weight in weights.items()
+            if valid_boosts.get(boost_type, 0.0) > 0
+        ]
+        return math.prod(weighted_products)
+        
+    else:  # weighted_sum (default)
+        # Calculate weighted sum
+        return sum(
+            valid_boosts.get(boost_type, 0.0) * weight
+            for boost_type, weight in weights.items()
+        )
+
+# Default boost weights
+DEFAULT_BOOST_WEIGHTS = {
+    'citation': 0.3,
+    'recency': 0.3,
+    'doctype': 0.2,
+    'collection': 0.1,
+    'refereed': 0.1
+}
+```
+
+#### Main Boost Application Function
+
+All boosts are applied together in the main function:
+
+```python
+# backend/app/services/boost_service.py
+async def apply_all_boosts(
+    results: List[SearchResult],
+    boost_config: Dict[str, Any],
+    citation_distributions: Dict[str, Dict[int, Dict[str, float]]] = None
+) -> List[SearchResult]:
+    """Apply all configured boost factors to search results."""
+    
+    for i, result in enumerate(boosted_results):
+        # Initialize boost factors
+        boosts = {}
+        
+        # Citation boost
+        if citation_boost > 0:
+            base_boost = calculate_citation_boost(
+                result.citation_count or 0,
+                result.collection or 'general',
+                result.year,
+                citation_distributions or {}
+            )
+            boosts['citation'] = base_boost * citation_boost
+        
+        # Recency boost
+        if recency_boost > 0 and result.pubdate:
+            base_boost = calculate_recency_boost(
+                result.pubdate,
+                recency_multiplier
+            )
+            boosts['recency'] = base_boost * recency_boost
+        
+        # Document type boost
+        if doctype_boosts:
+            base_boost = calculate_doctype_boost(
+                result.doctype,
+                doctype_boosts
+            )
+            boosts['doctype'] = base_boost
+        
+        # Collection boost
+        base_boost = calculate_collection_boost(
+            result.collection,
+            collection_boosts
+        )
+        boosts['collection'] = base_boost
+        
+        # Combine boost factors
+        final_boost = combine_boost_factors(
+            boosts, 
+            boost_weights,
+            combination_method
+        )
+        
+        # Apply final boost to score
+        boost_multiplier = math.exp(final_boost)
+        result._score *= boost_multiplier
+        result.boosted_score = result._score
+```
+
 ### Advanced Configurations
 
 #### Document Type Preferences
