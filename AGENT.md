@@ -1,5 +1,7 @@
 # Agent Configuration for Search Comparisons Tool
 
+Do not run any indefinite processes unless they are moved to the background
+If there is an environment in the directory you want to run code in make sure the environment is active
 ## Commands
 - **Test all**: `pytest backend/tests/`
 - **Test single**: `pytest backend/tests/test_filename.py::test_function`

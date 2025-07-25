@@ -5,6 +5,7 @@ This module provides utilities for making HTTP requests, including
 a timeout context manager and a safe API request function with proper
 error handling and retry logic.
 """
+import asyncio
 import signal
 import logging
 import random
@@ -117,7 +118,7 @@ async def safe_api_request(
             if attempt > 0:
                 delay = retry_delay * (2 ** (attempt - 1)) * (0.5 + random.random())
                 logger.info(f"Retry attempt {attempt} for {url}. Waiting {delay:.2f}s")
-                await client.timeout(delay)
+                await asyncio.sleep(delay)
             
             # Make the request
             logger.debug(f"Making {method} request to {url}")

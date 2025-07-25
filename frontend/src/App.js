@@ -137,7 +137,11 @@ function App() {
     
     try {
       const selectedSources = Object.keys(sources).filter(key => sources[key]);
-      const selectedMetrics = Object.keys(metrics).filter(key => metrics[key]);
+      const selectedMetrics = Object.keys(metrics).filter(key => metrics[key]).map(metric => {
+        // Map frontend metric names to backend API names
+        if (metric === 'rankBiased') return 'rank_based_overlap';
+        return metric;
+      });
       
       // Always include all fields since we removed the fields selection UI
       const selectedFields = ['title', 'abstract', 'author', 'doi', 'year', 'citation_count'];
@@ -262,7 +266,11 @@ function App() {
     
     try {
       const selectedSources = Object.keys(sources).filter(key => sources[key]);
-      const selectedMetrics = Object.keys(metrics).filter(key => metrics[key]);
+      const selectedMetrics = Object.keys(metrics).filter(key => metrics[key]).map(metric => {
+        // Map frontend metric names to backend API names
+        if (metric === 'rankBiased') return 'rank_based_overlap';
+        return metric;
+      });
       
       // Always include all fields since we removed the fields selection UI
       const selectedFields = ['title', 'abstract', 'author', 'doi', 'year', 'citation_count'];
@@ -856,9 +864,9 @@ function App() {
                                         const sourceNames = [formatSourceName(source1), formatSourceName(source2)];
                                         const comparisonLabel = `${sourceNames[0]} vs ${sourceNames[1]}`;
                                         
-                                        // Calculate metrics
-                                        const jaccardValue = results.comparison.similarity?.jaccard?.[key];
-                                        const rankBiasedValue = results.comparison.similarity?.rankBiased?.[key];
+                                        // Calculate metrics - backend returns pair_key[metric] not metric[pair_key]
+                                        const jaccardValue = results.comparison.similarity?.[key]?.jaccard;
+                                        const rankBiasedValue = results.comparison.similarity?.[key]?.rank_based_overlap;
                                         
                                         const doiMatches = stats.matching_dois?.length || 0;
                                         const titleMatches = stats.all_matching_titles?.length || 0;
@@ -996,9 +1004,9 @@ function App() {
                                           const alt1 = pair.key;
                                           const alt2 = pair.key.split('_vs_').reverse().join('_vs_');
                                           
-                                          // Get value from either direction
-                                          const value = results.comparison.similarity.jaccard?.[alt1] || 
-                                                     results.comparison.similarity.jaccard?.[alt2] || 
+                                          // Get value from either direction - backend returns pair_key[metric]
+                                          const value = results.comparison.similarity?.[alt1]?.jaccard || 
+                                                     results.comparison.similarity?.[alt2]?.jaccard || 
                                                      0;
                                           
                                           // Calculate bar height based on value
@@ -1103,9 +1111,9 @@ function App() {
                                           const alt1 = pair.key;
                                           const alt2 = pair.key.split('_vs_').reverse().join('_vs_');
                                           
-                                          // Get value from either direction
-                                          const value = results.comparison.similarity.rankBiased?.[alt1] || 
-                                                       results.comparison.similarity.rankBiased?.[alt2] || 
+                                          // Get value from either direction - backend returns pair_key[metric]
+                                          const value = results.comparison.similarity?.[alt1]?.rank_based_overlap || 
+                                          results.comparison.similarity?.[alt2]?.rank_based_overlap ||
                                                        0;
                                           
                                           // Calculate bar height based on value

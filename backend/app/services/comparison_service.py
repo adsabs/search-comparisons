@@ -175,14 +175,26 @@ class OverlapCalculator:
         overlap_percentage_1 = (overlap_count / len(identifiers1)) * 100 if identifiers1 else 0
         overlap_percentage_2 = (overlap_count / len(identifiers2)) * 100 if identifiers2 else 0
         
+        # Separate DOI and title matches for detailed breakdown
+        doi_overlap_items = [item for item in overlap_items if self._is_doi(item)]
+        title_overlap_items = [item for item in overlap_items if not self._is_doi(item)]
+        
+        # Calculate same rank count
+        same_rank_count = self._calculate_same_rank_count(results1, results2, overlap_items, results1_with_doi, results1_no_doi, results2_with_doi, results2_no_doi)
+        
         return {
-            "count": overlap_count,
+            "overlap": overlap_count,  # Frontend expects "overlap" not "count"
             "items": list(overlap_items),
             "jaccard_index": jaccard_index,
             "percentage_source1": overlap_percentage_1,
             "percentage_source2": overlap_percentage_2,
-            "doi_matches": len([item for item in overlap_items if self._is_doi(item)]),
-            "title_matches": len([item for item in overlap_items if not self._is_doi(item)])
+            "matching_dois": doi_overlap_items,  # Frontend expects "matching_dois"
+            "all_matching_titles": title_overlap_items,  # Frontend expects "all_matching_titles"
+            "same_rank_count": same_rank_count,  # Frontend expects "same_rank_count"
+            # Keep old names for backward compatibility
+            "count": overlap_count,
+            "doi_matches": len(doi_overlap_items),
+            "title_matches": len(title_overlap_items)
         }
     
     def _build_identifiers(self, results: List[SearchResult]) -> Tuple[Set[str], Dict[str, Any], Dict[str, Any]]:
@@ -228,6 +240,81 @@ class OverlapCalculator:
     def _is_doi(self, identifier: str) -> bool:
         """Check if an identifier is a DOI."""
         return identifier.startswith('10.') or '/' in identifier
+    
+    def _calculate_same_rank_count(self, results1, results2, overlap_items, results1_with_doi, results1_no_doi, results2_with_doi, results2_no_doi) -> int:
+        """
+        Calculate the number of papers that appear at the same rank position in both result sets.
+        
+        Args:
+            results1: First result set
+            results2: Second result set
+            overlap_items: Set of overlapping identifiers
+            results1_with_doi: DOI-based results from first set
+            results1_no_doi: Title-based results from first set
+            results2_with_doi: DOI-based results from second set
+            results2_no_doi: Title-based results from second set
+        
+        Returns:
+            int: Number of papers at the same rank in both sets
+        """
+        same_rank_count = 0
+        
+        # Create position maps for both result sets
+        position_map1 = {}
+        position_map2 = {}
+        
+        # Map identifiers to positions in first result set
+        for idx, result in enumerate(results1):
+            if isinstance(result, dict):
+                doi = result.get('doi')
+                title = result.get('title', '')
+            else:
+                doi = getattr(result, 'doi', None)
+                title = getattr(result, 'title', '')
+            
+            # Normalize doi and title (same logic as _build_identifiers)
+            if isinstance(doi, list):
+                doi = doi[0] if doi else None
+            if isinstance(title, list):
+                title = title[0] if title else ''
+            
+            if doi:
+                position_map1[doi] = idx
+            else:
+                processed_title = preprocess_text(title)
+                if processed_title:
+                    position_map1[processed_title] = idx
+        
+        # Map identifiers to positions in second result set
+        for idx, result in enumerate(results2):
+            if isinstance(result, dict):
+                doi = result.get('doi')
+                title = result.get('title', '')
+            else:
+                doi = getattr(result, 'doi', None)
+                title = getattr(result, 'title', '')
+            
+            # Normalize doi and title (same logic as _build_identifiers)
+            if isinstance(doi, list):
+                doi = doi[0] if doi else None
+            if isinstance(title, list):
+                title = title[0] if title else ''
+            
+            if doi:
+                position_map2[doi] = idx
+            else:
+                processed_title = preprocess_text(title)
+                if processed_title:
+                    position_map2[processed_title] = idx
+        
+        # Count items at the same rank
+        for identifier in overlap_items:
+            pos1 = position_map1.get(identifier)
+            pos2 = position_map2.get(identifier)
+            if pos1 is not None and pos2 is not None and pos1 == pos2:
+                same_rank_count += 1
+        
+        return same_rank_count
 
 
 class ComparisonService:
