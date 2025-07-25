@@ -4,6 +4,8 @@
 
 The Search Comparisons Tool is a comprehensive web application designed to compare search results across multiple scholarly search engines, collect relevance judgments, test changes to the ADS/SciX search experience, and analyze search performance metrics. It serves three primary audiences: users providing relevance judgments, technical staff adding features, and scientists testing algorithm changes.
 
+Note: Most of the relevant search testing will happen under Experiments -> Relevance Judgements or Experiments -> Query Intent.
+
 ## Table of Contents
 
 1. [Quick Start Guide](#quick-start-guide)
@@ -622,6 +624,8 @@ pytest backend/tests/ --cov=backend/app --cov-report=html
 ---
 
 ## Scientist Guide: Algorithm Testing
+
+Note: To test changes to boost factors, compare ADS/SciX production results to development or other search engines, the interface is located by clicking the Experiments tab and running a search under the Relevance Judgements tab.
 
 ### Overview
 This tool enables systematic comparison of search algorithms, ranking functions, and parameter configurations across multiple search engines. You can test hypotheses about search relevance and collect quantitative metrics.
