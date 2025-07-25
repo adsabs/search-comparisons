@@ -126,7 +126,10 @@ async def safe_api_request(
             response.raise_for_status()
             
             # Return successful response as dictionary
-            return response.json()
+            try:
+                return response.json()
+            except ValueError as e:
+                raise ValueError(f"Invalid JSON response: {response.text[:200]}...") from e
             
         except httpx.HTTPStatusError as e:
             status_code = e.response.status_code

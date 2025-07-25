@@ -209,8 +209,11 @@ class BaseEngine(ABC):
             response.raise_for_status()
             
             # Parse the response
-            response_data = response.json()
-            return self.parse_response(response_data)
+            try:
+                response_data = response.json()
+                return self.parse_response(response_data)
+            except ValueError as e:
+                raise ValueError(f"Invalid JSON response from {self.name}: {response.text[:200]}...") from e
     
     @abstractmethod
     def get_default_fields(self) -> List[str]:
