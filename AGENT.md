@@ -12,6 +12,11 @@ If there is an environment in the directory you want to run code in make sure th
 - **Start local**: `./startup.sh` (starts backend on :8001, frontend on :3001)
 - **Backend only**: `cd backend && python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8001`
 
+## Ports
+- **Backend**: Always runs on port 8001 (http://localhost:8001)
+- **Frontend**: Always runs on port 3001 (http://localhost:3001)
+- **API endpoints**: Backend API available at http://localhost:8001/api/
+
 ## Architecture
 - **FastAPI backend** in `backend/app/` with services, routes, API models, core config
 - **Multi-engine search**: ADS, Google Scholar, Semantic Scholar, Web of Science

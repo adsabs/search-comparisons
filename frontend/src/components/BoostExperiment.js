@@ -615,6 +615,11 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
 
       const data = await response.json();
       console.log('Search response:', data);
+      console.log('DEBUG: Search response results structure:', JSON.stringify(Object.keys(data.results || {}), null, 2));
+      console.log('DEBUG: SciX Dev results:', data.results?.sciXDev?.length || 0, 'results');
+      if (data.results?.sciXDev) {
+        console.log('DEBUG: First SciX Dev result:', data.results.sciXDev[0]);
+      }
       
       if (!data.results || !data.results.ads || data.results.ads.length === 0) {
         throw new Error('No results found for the given query');
