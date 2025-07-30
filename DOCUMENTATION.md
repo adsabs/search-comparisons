@@ -45,6 +45,13 @@ cd search-comparisons
 - Creates Python virtual environment if needed
 - Sets up environment variables correctly
 
+**Killing the Servers**
+If you notice the backend or frontend don't seem to be responding or working properly and want to kill those servers to restart them again, use:
+lsof -i:8001
+lsof -i:3001
+
+to get the pids for the ports corresponding to the backend and frontend. To kill the process type kill pid where the pid is the one corresponding to the server you want to stop. 
+
 **Prerequisites:**
 - Ollama must be installed and running (usually runs as system service)
 - If query intent features don't work, see [LLM Service Issues](#llm-service-issues)
