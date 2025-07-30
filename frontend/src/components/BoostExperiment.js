@@ -89,18 +89,28 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
     citation_boost: 0.0,
     recency_boost: 0.0,
     recency_multiplier: 1.0,
-    doctype_ranks: {
-      article: 1,      // Journal article
-      book: 2,         // Book
-      inbook: 3,       // Book chapter
-      proceedings: 4,  // Conference proceedings
-      inproceedings: 5,// Conference paper
-      phdthesis: 6,    // PhD thesis
-      mastersthesis: 7,// Masters thesis
-      techreport: 8,   // Technical report
-      preprint: 9,     // Preprint
-      abstract: 10,    // Abstract
-      other: 11        // Other/unknown
+    doctype_boosts: {
+      article: 1.0,      // Journal article - highest priority
+      eprint: 1.0,       // Article preprinted in arXiv - highest priority
+      inbook: 1.0,       // Article appearing in a book - highest priority
+      book: 1.0,         // Book (monograph) - highest priority
+      inproceedings: 0.8,// Article appearing in conference proceedings
+      catalog: 0.8,      // Data catalog
+      software: 0.8,     // Software package
+      circular: 0.7,     // Printed or electronic circular
+      mastersthesis: 0.7,// Masters thesis
+      phdthesis: 0.7,    // PhD thesis
+      proceedings: 0.7,  // Conference proceedings book
+      techreport: 0.7,   // Technical report
+      bookreview: 0.6,   // Published book review
+      proposal: 0.6,     // Observing or funding proposal
+      talk: 0.6,         // Research talk
+      abstract: 0.5,     // Meeting abstract
+      newsletter: 0.5,   // Printed or electronic newsletter
+      obituary: 0.4,     // Obituary
+      pressrelease: 0.3, // Press release
+      misc: 0.2,         // Anything not in the above list
+      other: 0.2         // Default for unknown types
     },
     collection_boosts: {
       astronomy: 1.0,     // Default: no boost
@@ -143,18 +153,28 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
         citation_boost: 0.0,
         recency_boost: 0.0,
         recency_multiplier: 1.0,
-        doctype_ranks: {
-          article: 1,      // Journal article
-          book: 2,         // Book
-          inbook: 3,       // Book chapter
-          proceedings: 4,  // Conference proceedings
-          inproceedings: 5,// Conference paper
-          phdthesis: 6,    // PhD thesis
-          mastersthesis: 7,// Masters thesis
-          techreport: 8,   // Technical report
-          preprint: 9,     // Preprint
-          abstract: 10,    // Abstract
-          other: 11        // Other/unknown
+        doctype_boosts: {
+          article: 1.0,      // Journal article - highest priority
+          eprint: 1.0,       // Article preprinted in arXiv - highest priority
+          inbook: 1.0,       // Article appearing in a book - highest priority
+          book: 1.0,         // Book (monograph) - highest priority
+          inproceedings: 0.8,// Article appearing in conference proceedings
+          catalog: 0.8,      // Data catalog
+          software: 0.8,     // Software package
+          circular: 0.7,     // Printed or electronic circular
+          mastersthesis: 0.7,// Masters thesis
+          phdthesis: 0.7,    // PhD thesis
+          proceedings: 0.7,  // Conference proceedings book
+          techreport: 0.7,   // Technical report
+          bookreview: 0.6,   // Published book review
+          proposal: 0.6,     // Observing or funding proposal
+          talk: 0.6,         // Research talk
+          abstract: 0.5,     // Meeting abstract
+          newsletter: 0.5,   // Printed or electronic newsletter
+          obituary: 0.4,     // Obituary
+          pressrelease: 0.3, // Press release
+          misc: 0.2,         // Anything not in the above list
+          other: 0.2         // Default for unknown types
         },
         collection_boosts: {
           astronomy: 1.0,     // Default: no boost
@@ -180,20 +200,19 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
       // Convert value to appropriate type based on the field
       let convertedValue = value;
       if (value !== null && value !== undefined && value !== '') {
-        if (type === 'doctype_ranks') {
-          convertedValue = parseInt(value, 10);
-        } else if (type === 'boost_weights' || 
-                   type === 'adsQueryFields' || 
-                   type === 'citation_boost' || 
-                   type === 'recency_boost' || 
-                   type === 'recency_multiplier' || 
-                   type === 'refereed_boost') {
+        if (type === 'boost_weights' || 
+            type === 'adsQueryFields' || 
+            type === 'doctype_boosts' || 
+            type === 'citation_boost' || 
+            type === 'recency_boost' || 
+            type === 'recency_multiplier' || 
+            type === 'refereed_boost') {
           convertedValue = parseFloat(value);
         }
       }
 
-      // For nested objects (adsQueryFields, doctype_ranks, collection_boosts, and boost_weights)
-      if (type === 'adsQueryFields' || type === 'doctype_ranks' || type === 'collection_boosts' || type === 'boost_weights') {
+      // For nested objects (adsQueryFields, doctype_boosts, collection_boosts, and boost_weights)
+      if (type === 'adsQueryFields' || type === 'doctype_boosts' || type === 'collection_boosts' || type === 'boost_weights') {
         const currentFields = prev[type] || defaultConfig[type];
         const newConfig = {
           ...prev,
@@ -384,7 +403,7 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
     console.log('Current boost config:', {
       ...boostConfig,
       adsQueryFields: boostConfig.adsQueryFields || {},
-      doctype_ranks: boostConfig.doctype_ranks || {}
+      doctype_boosts: boostConfig.doctype_boosts || {}
     });
     
     if (searchResults?.results?.ads?.[0]) {
@@ -685,9 +704,7 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
           citation_boost: parseFloat(boostConfig.citation_boost || 0),
           recency_boost: parseFloat(boostConfig.recency_boost || 0),
           recency_multiplier: parseFloat(boostConfig.recency_multiplier || 1.0),
-          doctype_boosts: Object.fromEntries(
-            Object.entries(boostConfig.doctype_ranks).map(([type, rank]) => [type, 1.0 / rank])
-          ),
+          doctype_boosts: boostConfig.doctype_boosts,
           collection_boosts: Object.fromEntries(
             Object.entries(boostConfig.collection_boosts).map(([type, boost]) => [type, parseFloat(boost !== undefined && boost !== null && boost !== '' ? boost : 1.0)])
           ),
@@ -913,18 +930,36 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
           <Typography variant="subtitle1" gutterBottom>
             Document Type Boost
           </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Control boosting by document type. 0.0 = filter out, 1.0 = keep original score, &gt;1.0 = amplify
+          </Typography>
           <Grid container spacing={2}>
-            {Object.entries(boostConfig.doctype_ranks).map(([type, rank]) => (
+            {Object.entries(boostConfig.doctype_boosts).map(([type, boost]) => (
               <Grid item xs={12} sm={6} md={4} key={type}>
-                <TextField
-                  fullWidth
-                  label={`${type.charAt(0).toUpperCase() + type.slice(1)} Rank`}
-                  type="number"
-                  value={rank}
-                  onChange={(e) => handleBoostChange('doctype_ranks', type, parseInt(e.target.value))}
-                  inputProps={{ min: 1, step: 1 }}
-                  helperText={`Rank for ${type} (lower is better)`}
-                />
+                <Box sx={{ px: 2 }}>
+                  <Typography variant="body2" gutterBottom>
+                    {type.charAt(0).toUpperCase() + type.slice(1)}
+                  </Typography>
+                  <TextField
+                    type="number"
+                    value={boost}
+                    onChange={(e) => handleBoostChange('doctype_boosts', type, parseFloat(e.target.value) || 0)}
+                    size="small"
+                    fullWidth
+                    inputProps={{
+                      min: 0,
+                      max: 5,
+                      step: 0.01
+                    }}
+                    sx={{ mt: 1 }}
+                  />
+                  <Typography variant="caption" color="text.secondary">
+                    {boost === 0 ? 'Filtered out' : 
+                     boost === 1 ? 'Original score' : 
+                     boost > 1 ? `${boost.toFixed(2)}x boost` : 
+                     `${boost.toFixed(2)}x reduction`}
+                  </Typography>
+                </Box>
               </Grid>
             ))}
           </Grid>
@@ -1647,7 +1682,7 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
             field_boosts: boostConfig.adsQueryFields,
             citation_boost: boostConfig.citation_boost,
             recency_boost: boostConfig.recency_boost,
-            doctype_boosts: boostConfig.doctype_ranks,
+            doctype_boosts: boostConfig.doctype_boosts,
             reference_year: boostConfig.referenceYear
           } : null
         });
@@ -2051,6 +2086,27 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
                         size="small"
                         variant="outlined"
                         sx={{ height: 20, '& .MuiChip-label': { px: 1, fontSize: '0.7rem' } }}
+                      />
+                    )}
+                    {result.doctype && (
+                      <Chip 
+                        label={result.doctype.charAt(0).toUpperCase() + result.doctype.slice(1)} 
+                        size="small"
+                        variant="outlined"
+                        sx={{ 
+                          height: 20, 
+                          '& .MuiChip-label': { px: 1, fontSize: '0.7rem' },
+                          bgcolor: result.doctype === 'article' ? '#e3f2fd' : 
+                                   result.doctype === 'inproceedings' ? '#f3e5f5' :
+                                   result.doctype === 'bookreview' ? '#e8f5e8' :
+                                   result.doctype === 'eprint' ? '#fff3e0' :
+                                   'default',
+                          borderColor: result.doctype === 'article' ? '#2196f3' :
+                                      result.doctype === 'inproceedings' ? '#9c27b0' :
+                                      result.doctype === 'bookreview' ? '#4caf50' :
+                                      result.doctype === 'eprint' ? '#ff9800' :
+                                      'default'
+                        }}
                       />
                     )}
                     {result.collection && (

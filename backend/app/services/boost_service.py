@@ -26,7 +26,32 @@ DEFAULT_BOOST_WEIGHTS = {
     'refereed': 0.1
 }
 
-# Document type ranks based on the provided table
+# Document type boost values (direct boost factors)
+DEFAULT_DOCTYPE_BOOSTS = {
+    'article': 1.0,      # Journal article - highest priority
+    'eprint': 1.0,       # Article preprinted in arXiv - highest priority
+    'inbook': 1.0,       # Article appearing in a book - highest priority
+    'book': 1.0,         # Book (monograph) - highest priority
+    'inproceedings': 0.8,# Article appearing in conference proceedings
+    'catalog': 0.8,      # Data catalog
+    'software': 0.8,     # Software package
+    'circular': 0.7,     # Printed or electronic circular
+    'mastersthesis': 0.7,# Masters thesis
+    'phdthesis': 0.7,    # PhD thesis
+    'proceedings': 0.7,  # Conference proceedings book
+    'techreport': 0.7,   # Technical report
+    'bookreview': 0.6,   # Published book review
+    'proposal': 0.6,     # Observing or funding proposal
+    'talk': 0.6,         # Research talk
+    'abstract': 0.5,     # Meeting abstract
+    'newsletter': 0.5,   # Printed or electronic newsletter
+    'obituary': 0.4,     # Obituary
+    'pressrelease': 0.3, # Press release
+    'misc': 0.2,         # Anything not in the above list
+    'other': 0.2         # Default for unknown types
+}
+
+# Legacy rank-based configuration (DEPRECATED - for backward compatibility only)
 DEFAULT_DOCTYPE_RANKS = {
     'article': 1,      # Journal article
     'eprint': 1,       # Article preprinted in arXiv
@@ -52,38 +77,65 @@ DEFAULT_DOCTYPE_RANKS = {
     'other': 8         # Default for unknown types
 }
 
-def calculate_doctype_boost(doctype: str, doctype_ranks: Dict[str, int] = None) -> float:
+def _convert_ranks_to_boosts(rank_map: Dict[str, int]) -> Dict[str, float]:
     """
-    Calculate document type boost based on rank using even distribution.
+    Convert legacy rank-based mapping to boost values for backward compatibility.
     
-    The boost factor is calculated as: 1 - (rank_index / (num_unique_ranks - 1))
-    where rank_index is the position of the rank in the sorted list of unique ranks.
+    Args:
+        rank_map: Dictionary mapping doctypes to ranks (lower is better)
+        
+    Returns:
+        Dict[str, float]: Dictionary mapping doctypes to boost values
+    """
+    unique_ranks = sorted(set(rank_map.values()))
+    num_unique_ranks = len(unique_ranks)
+    
+    if num_unique_ranks <= 1:
+        return {k: 1.0 for k in rank_map.keys()}
+    
+    # Create rank to boost mapping using the old formula
+    rank_to_boost = {}
+    for i, rank in enumerate(unique_ranks):
+        rank_to_boost[rank] = 1.0 - (i / (num_unique_ranks - 1))
+    
+    # Convert rank map to boost map
+    return {doctype: rank_to_boost[rank] for doctype, rank in rank_map.items()}
+
+def _is_rank_mapping(mapping: Dict[str, Any]) -> bool:
+    """
+    Heuristic: treat as 'rank' mapping only if
+    1) all entries are ints and
+    2) max(rank) is reasonably small (e.g. ≤ 20).
+    """
+    return (
+        mapping
+        and all(isinstance(v, int) for v in mapping.values())
+        and max(mapping.values()) <= 20
+    )
+
+def calculate_doctype_boost(doctype: str, doctype_mapping: Dict[str, Any] = None) -> float:
+    """
+    Calculate document type boost using direct boost values or legacy ranks.
     
     Args:
         doctype: Document type string
-        doctype_ranks: Dictionary mapping doctypes to ranks (lower is better)
+        doctype_mapping: Dictionary mapping doctypes to boost values (floats) or ranks (ints, deprecated)
         
     Returns:
-        float: Boost factor (higher for better ranked doctypes)
+        float: Boost factor for the document type
     """
-    doctype_ranks = doctype_ranks or DEFAULT_DOCTYPE_RANKS
+    doctype_mapping = doctype_mapping or DEFAULT_DOCTYPE_BOOSTS
     doctype = doctype.lower() if doctype else 'other'
     
-    # Get rank for doctype, default to 'other' if not found
-    rank = doctype_ranks.get(doctype, doctype_ranks['other'])
+    # Backward compatibility: detect if we're using legacy rank-based mapping
+    if _is_rank_mapping(doctype_mapping):
+        logger.info("Converting legacy rank-based doctype mapping to boost values")
+        doctype_mapping = _convert_ranks_to_boosts(doctype_mapping)
     
-    # Get unique ranks and sort them
-    unique_ranks = sorted(set(doctype_ranks.values()))
+    # Get boost for doctype, default to 'other' if not found
+    boost = doctype_mapping.get(doctype, doctype_mapping.get('other', 0.0))
     
-    # Calculate boost factor using even distribution
-    rank_index = unique_ranks.index(rank)
-    num_unique_ranks = len(unique_ranks)
-    
-    # Avoid division by zero if there's only one rank
-    if num_unique_ranks <= 1:
-        return 1.0
-        
-    return 1.0 - (rank_index / (num_unique_ranks - 1))
+    return float(boost)
 
 def calculate_recency_boost(pubdate: str, multiplier: float = 1.0) -> float:
     """
@@ -305,7 +357,16 @@ async def apply_all_boosts(
         citation_boost = boost_config.get('citation_boost', 0.0)
         recency_boost = boost_config.get('recency_boost', 0.0)
         recency_multiplier = boost_config.get('recency_multiplier', 1.0)
+        # Handle both new doctype_boosts and legacy doctype_ranks for backward compatibility
         doctype_boosts = boost_config.get('doctype_boosts', {})
+        if not doctype_boosts and 'doctype_ranks' in boost_config:
+            logger.info("Using legacy doctype_ranks configuration")
+            doctype_boosts = boost_config.get('doctype_ranks', {})
+        
+        # Check if doctype_boosts is actually a legacy rank mapping
+        if _is_rank_mapping(doctype_boosts):
+            logger.info("Converting legacy rank-based doctype mapping to boost values in apply_all_boosts")
+            doctype_boosts = _convert_ranks_to_boosts(doctype_boosts)
         field_boosts = boost_config.get('field_boosts', {})
         collection_boosts = boost_config.get('collection_boosts', {})
         combination_method = boost_config.get('boost_combination_method', 'weighted_sum')
@@ -447,6 +508,17 @@ async def apply_all_boosts(
                 result._score = 0.0
                 result.boosted_score = 0.0
                 continue
+            
+            # Check if doctype boost is 0.0 (filter out)
+            # Only filter if doctype_boosts are configured AND the specific doctype has a 0.0 boost
+            if doctype_boosts and result.doctype and result.doctype.lower() in doctype_boosts:
+                doctype_boost_value = doctype_boosts.get(result.doctype.lower(), 0.0)
+                if doctype_boost_value == 0.0:
+                    # Mark this result for filtering by setting score to 0
+                    logger.info(f"Filtering out result due to 0.0 doctype boost: {result.title[:50]}..., doctype={result.doctype}")
+                    result._score = 0.0
+                    result.boosted_score = 0.0
+                    continue
             
             # Combine boost factors using the specified method
             final_boost = combine_boost_factors(

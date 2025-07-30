@@ -83,7 +83,7 @@ The interface where judgements are collected is located under Experiments -> Rel
 - **Show/Hide Boost Controls**: You can toggle the boost controls on and off depending on whether you need them to be shown.
 - **Comparison Engine Dropdwon**: Select the search engine you want to compare with on the right side including Google Scholar, Web of Science, Semantic Scholar, and SciX Development.
 - **Original Results**: Results from ADS/SciX sorted by relevance. Click the v button to pop out the abstract. The record includes the Title, publication year, citation count, collection, a drop down for relevance judgement selection, and a button to 'Add Note' to accompany your judgement score. If 'Show Previous Judgements' is toggled on the record also displays previous judgement scores associated with this record and their source (no labeled source if from the web tool, Quepid if from Quepid).
-- **Boosted Results**: Re-ranked results based on modifications to the boost controls available on the left side. No results are displayed by default. To populate the results you need to select 'Run Boost Experiment'. The displayed record information types are identical to the Original Results records.
+- **Boosted Results**: Re-ranked results based on modifications to the boost controls available on the left side. No results are displayed by default. To populate the results you need to select 'Run Boost Experiment'. Each result displays title, year, citation count, document type (with color coding), collection, boost score, and relevance judgment controls.
 - **XX Results**: Results from the selected Comparison Engine using the drop down menu above. The displayed record information types are identical to the others except for the collection.
 
 **Boost Controls**
@@ -91,7 +91,7 @@ The interface where judgements are collected is located under Experiments -> Rel
 - **ADS Query Field Weights**: Boxes to enter in values for author, year, title, abstract, and keyword weights used by the relevance algorithm.
 - **Citation Boost**: A boost factor that includes the citation count.
 - **Recency Boost**: The first box value controls the overall strength of the recency boost. The second box value controls how quickly the recency boost decays with age.
-- **Document Type Boost**: Boxes to enter rankings of importance for various document types that will be boosted based on their relative importance.
+- **Document Type Boost**: Boxes to enter boost values for various document types. Setting a doctype boost to 0 will completely filter out that document type from the results.
 - **Collection Boost**: Boxes to enter boost values for the collections in ADS/SciX.
 - **Refereed Boost**: A box to enter a boost factor to boost refereed papers.
 - **Boost Weights**: Boxes to enter values to control how much each boost type contributes to the final score including citation count, recency, document type, collection, and whether the paper is refereed.
@@ -549,7 +549,15 @@ const availableMetrics = [
 
 ### Adding Boost/Ranking Experiments
 
-Boost configurations allow post-retrieval re-ranking of search results. Add new boost types in `services/boost_service.py`:
+Boost configurations allow post-retrieval re-ranking of search results and filtering by document type. 
+
+#### Boost Filtering Behavior
+
+- **Document Type Filtering**: Setting a doctype boost value to 0 will completely filter out that document type from results
+- **Collection Filtering**: Setting a collection boost value to 0 will filter out papers from that collection
+- **Filtered Results Count**: The API response includes a `results_filtered` count showing how many results were removed by filtering
+
+Add new boost types in `services/boost_service.py`:
 
 ```python
 def apply_your_boost(
