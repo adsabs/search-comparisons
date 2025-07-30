@@ -209,42 +209,7 @@ const experimentService = {
       return handleApiError(error);
     }
   },
-  
-  /**
-   * Evaluate search results against Quepid judgments
-   */
-  evaluateWithQuepid: async (evaluationRequest) => {
-    try {
-      const response = await apiClient.post('/api/experiments/quepid-evaluation', evaluationRequest);
-      return response.data;
-    } catch (error) {
-      return handleApiError(error);
-    }
-  },
-  
-  /**
-   * Get available Quepid cases
-   */
-  getQuepidCases: async () => {
-    try {
-      const response = await apiClient.get('/api/experiments/quepid-cases');
-      return response.data;
-    } catch (error) {
-      return handleApiError(error);
-    }
-  },
-  
-  /**
-   * Get judged documents for a specific query
-   */
-  getJudgedDocuments: async (caseId = 8914, queryText = "triton") => {
-    try {
-      const response = await apiClient.get(`/api/quepid/documents?case_id=${caseId}&query_text=${encodeURIComponent(queryText)}`);
-      return response.data;
-    } catch (error) {
-      return handleApiError(error);
-    }
-  }
+
 };
 
 /**

@@ -11,6 +11,5 @@ from . import (
     ads_service,
     scholar_service,
     semantic_scholar_service,
-    web_of_science_service,
-    quepid_service
+    web_of_science_service
 ) 

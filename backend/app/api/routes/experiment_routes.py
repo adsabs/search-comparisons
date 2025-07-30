@@ -21,17 +21,9 @@ from ...core.rate_limiting import limiter, rate_limit_experiment, rate_limit_mod
 from ...core.logging import set_request_id, get_request_id, log_api_access
 from ...services import search_service
 from ...services.ads_service import get_ads_results
-from ...services.quepid_service import (
-    get_quepid_cases,
-    get_case_judgments,
-    QUEPID_API_KEY,
-    QuepidService
-)
+
 from ..models import (
     ErrorResponse, 
-    QuepidEvaluationRequest,
-    QuepidEvaluationResponse,
-    QuepidEvaluationSourceResult,
     SearchResult,
     SearchRequest,
     BoostConfig
@@ -56,8 +48,7 @@ back_compat_router = APIRouter(
     responses={404: {"description": "Not found"}},
 )
 
-# Initialize QuepidService
-quepid_service = QuepidService()
+
 
 # Initialize QueryIntentService
 query_intent_service = QueryIntentService()
@@ -534,138 +525,7 @@ async def analyze_search_logs(request: Request) -> Dict[str, Any]:
     }
 
 
-@router.post("/quepid-evaluation", response_model=QuepidEvaluationResponse)
-@limiter.limit("8/minute")
-async def evaluate_search_with_quepid(
-    http_request: Request,
-    request: QuepidEvaluationRequest,
-    background_tasks: BackgroundTasks
-) -> Dict[str, Any]:
-    """
-    Evaluate search results against Quepid judgments.
-    
-    Args:
-        request: The evaluation request containing query, case ID, and other parameters
-        background_tasks: FastAPI background tasks handler
-    
-    Returns:
-        Dict[str, Any]: Evaluation results including metrics and judged documents
-    """
-    try:
-        logger.info(f"Quepid evaluation request: {request.dict()}")
-        
-        if not QUEPID_API_KEY:
-            raise HTTPException(
-                status_code=500,
-                detail="Quepid API key not configured. Please set QUEPID_API_KEY environment variable."
-            )
-        
-        # Get judged documents from Quepid
-        judged_documents = await quepid_service.get_judged_documents(
-            case_id=request.case_id, 
-            query_id=request.query_id
-        )
-        
-        # Get case data from Quepid
-        case_data = await get_case_judgments(request.case_id)
-        if not case_data:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Case {request.case_id} not found or no data returned from Quepid"
-            )
-        
-        # Get judgments for the query
-        judgments = {}
-        for query_data in case_data.get('queries', []):
-            if query_data['query'] == request.query:
-                judgments = query_data.get('ratings', {})
-                break
-        
-        if not judgments:
-            available_queries = [q['query'] for q in case_data.get('queries', [])]
-            raise HTTPException(
-                status_code=404,
-                detail=f"No judgments found for query '{request.query}' in case {request.case_id}. Available queries: {', '.join(available_queries)}"
-            )
-        
-        # Format response
-        source_result = QuepidEvaluationSourceResult(
-            source="quepid",
-            metrics=[],
-            judged_retrieved=0,
-            relevant_retrieved=0,
-            results_count=0,
-            results=[],
-            config=BoostConfig(
-                name="Base Results",
-                citation_boost=0.0,
-                recency_boost=0.0,
-                doctype_boosts={}
-            ),
-            judged_titles=[]
-        )
 
-        return QuepidEvaluationResponse(
-            query=request.query,
-            case_id=request.case_id,
-            case_name=case_data.get('case_name', f'Case {request.case_id}'),
-            source_results=[source_result],
-            total_judged=len(judgments),
-            total_relevant=sum(1 for j in judgments.values() if 
-                (isinstance(j, dict) and j.get('rating', 0) > 0) or 
-                (isinstance(j, (int, float)) and j > 0)),
-            available_queries=[q['query'] for q in case_data.get('queries', [])],
-            judged_documents=judged_documents  # Add judged documents to response
-        )
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error in Quepid evaluation: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error evaluating search results: {str(e)}"
-        )
-
-
-@router.get(
-    "/quepid-cases", 
-    responses={
-        404: {"model": ErrorResponse},
-        500: {"model": ErrorResponse}
-    }
-)
-@limiter.limit("30/minute")
-async def get_available_quepid_cases(request: Request) -> List[Dict[str, Any]]:
-    """
-    Get a list of available Quepid cases.
-    
-    This endpoint retrieves a list of cases from Quepid that are
-    available for use in evaluations.
-    
-    Returns:
-        List[Dict[str, Any]]: List of Quepid cases
-    
-    Raises:
-        HTTPException: If there's an error retrieving the cases
-    """
-    try:
-        cases = await get_quepid_cases()
-        
-        if isinstance(cases, dict) and cases.get('error'):
-            raise HTTPException(
-                status_code=500,
-                detail=f"Error retrieving Quepid cases: {cases.get('message', 'Unknown error')}"
-            )
-        
-        return cases
-    
-    except Exception as e:
-        logger.error(f"Error getting Quepid cases: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error retrieving Quepid cases: {str(e)}"
-        )
 
 
 @back_compat_router.post("/boost-experiment-legacy")

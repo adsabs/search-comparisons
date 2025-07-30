@@ -43,19 +43,16 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
   const [transformedQuery, setTransformedQuery] = useState(null);
   const [searchQuery, setSearchQuery] = useState('triton');
   const [informationNeed, setInformationNeed] = useState('');
-  const [quepidCaseId, setQuepidCaseId] = useState('8914');
   const [searchResults, setSearchResults] = useState(null);
-  const [quepidResults, setQuepidResults] = useState(null);
   const [judgmentMap, setJudgmentMap] = useState({});
   const [expandedRecords, setExpandedRecords] = useState({});
   const [localJudgments, setLocalJudgments] = useState({});
   const [selectedComparisonEngine, setSelectedComparisonEngine] = useState('scholar');
   const [judgmentCounts, setJudgmentCounts] = useState({
-    original: { quepid: 0, manual: 0, total: 0 },
-    boosted: { quepid: 0, manual: 0, total: 0 },
-    scholar: { quepid: 0, manual: 0, total: 0 },
-    sciXDev: { quepid: 0, manual: 0, total: 0 },
-    quepid: { quepid: 0, manual: 0, total: 0 }
+    original: { manual: 0, total: 0 },
+    boosted: { manual: 0, total: 0 },
+    scholar: { manual: 0, total: 0 },
+    sciXDev: { manual: 0, total: 0 }
   });
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [showBoostControls, setShowBoostControls] = useState(true);
@@ -67,8 +64,7 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
     original: 10,
     boosted: 10,
     scholar: 10,
-    sciXDev: 10,
-    quepid: 10
+    sciXDev: 10
   });
   const [submitLoading, setSubmitLoading] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
@@ -623,7 +619,7 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
           metrics: ['ndcg@10', 'precision@10', 'recall@10'],
           fields: ['title', 'abstract', 'author', 'year', 'citation_count', 'doctype', 'collection'],
           max_results: 20,
-          quepid_case_id: quepidCaseId || undefined
+
         }),
       });
 
@@ -654,20 +650,7 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
         await fetchPreviousJudgments(searchQuery, data.results.ads);
       }
       
-      // If we have a Quepid case ID, fetch the Quepid results
-      if (quepidCaseId) {
-        try {
-          const quepidResponse = await fetch(`/api/quepid/judgments/${quepidCaseId}?query=${encodeURIComponent(searchQuery)}`);
-          if (quepidResponse.ok) {
-            const quepidData = await quepidResponse.json();
-            setQuepidResults(quepidData);
-          }
-        } catch (err) {
-          console.error('Error fetching Quepid results:', err);
-        }
-      } else {
-        setQuepidResults(null);
-      }
+
     } catch (err) {
       console.error('Error performing search:', err);
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -1153,12 +1136,9 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
   
   // Add this helper function to get judgment for a title
   const getJudgmentForTitle = useCallback((title) => {
-    if (!title) return null;
-    const normalizedTitle = normalizeTitle(title);
-    const judgment = judgmentMap[normalizedTitle];
-    console.log(`Looking up judgment for title: "${title}" -> "${normalizedTitle}" -> ${judgment}`);
-    return judgment === undefined ? null : judgment;
-  }, [judgmentMap]);
+    // No longer using external judgments, always return null
+    return null;
+  }, []);
 
   // Function to calculate NDCG
   const calculateNDCG = useCallback((results, k = 10, source = 'original') => {
@@ -1172,8 +1152,6 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
       const recordId = result.bibcode || normalizeTitle(result.title);
       // First check local judgments with the correct source ID
       const localJudgment = localJudgments[`${source}_${recordId}`];
-      // Then check Quepid judgments
-      const quepidJudgment = getJudgmentForTitle(result.title);
       // Then check previous judgments if enabled
       const prevJudgments = showPreviousJudgments ? previousJudgments[recordId] || [] : [];
       
@@ -1182,15 +1160,13 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
         ? prevJudgments.reduce((sum, j) => sum + j.judgment_score, 0) / prevJudgments.length
         : null;
       
-      // Use local judgment if available, otherwise use Quepid judgment, then previous judgments
+      // Use local judgment if available, otherwise use previous judgments
       const judgment = localJudgment?.judgment !== undefined ? localJudgment.judgment :
-                      quepidJudgment !== null ? quepidJudgment :
                       avgPrevJudgment !== null ? avgPrevJudgment : null;
       
       console.log(`NDCG calculation for ${source} - Record: ${result.title}`, {
         recordId,
         localJudgment,
-        quepidJudgment,
         prevJudgments,
         avgPrevJudgment,
         finalJudgment: judgment
@@ -1229,20 +1205,18 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
   useEffect(() => {
     const updateJudgmentCounts = () => {
       const newCounts = {
-        original: { quepid: 0, manual: 0, total: 0 },
-        boosted: { quepid: 0, manual: 0, total: 0 },
-        scholar: { quepid: 0, manual: 0, total: 0 },
-        sciXDev: { quepid: 0, manual: 0, total: 0 },
-        quepid: { quepid: 0, manual: 0, total: 0 }
+        original: { manual: 0, total: 0 },
+        boosted: { manual: 0, total: 0 },
+        scholar: { manual: 0, total: 0 },
+        sciXDev: { manual: 0, total: 0 }
       };
 
       // Count judgments for each source
-      ['original', 'boosted', 'scholar', 'sciXDev', 'quepid'].forEach(source => {
+      ['original', 'boosted', 'scholar', 'sciXDev'].forEach(source => {
         const results = source === 'original' ? searchResults?.results?.ads :
                        source === 'boosted' ? boostedResults?.results?.ads :
                        source === 'scholar' ? searchResults?.results?.scholar :
-                       source === 'sciXDev' ? searchResults?.results?.sciXDev :
-                       quepidResults;
+                       searchResults?.results?.sciXDev;
 
         if (Array.isArray(results)) {
           results.slice(0, 10).forEach(result => {
@@ -1250,12 +1224,12 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
             const recordId = result.bibcode || normalizeTitle(result.title);
             if (!recordId) return;
             
-            const hasQuepidJudgment = getJudgmentForTitle(result.title) !== null;
             const hasManualJudgment = localJudgments?.[`${source}_${recordId}`] !== undefined;
             
-            if (hasQuepidJudgment) newCounts[source].quepid++;
-            if (hasManualJudgment) newCounts[source].manual++;
-            if (hasQuepidJudgment || hasManualJudgment) newCounts[source].total++;
+            if (hasManualJudgment) {
+              newCounts[source].manual++;
+              newCounts[source].total++;
+            }
           });
         }
       });
@@ -1265,7 +1239,7 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
     };
 
     updateJudgmentCounts();
-  }, [localJudgments, searchResults, boostedResults, quepidResults, getJudgmentForTitle]);
+  }, [localJudgments, searchResults, boostedResults]);
 
   // Function to calculate title overlap between two result sets in top 10
   const calculateTitleOverlap = useCallback((results1, results2) => {
@@ -1325,22 +1299,21 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
     // Calculate judgment counts directly
     const counts = results ? results.slice(0, 10).reduce((acc, result) => {
       const recordId = result.bibcode || normalizeTitle(result.title);
-      const hasQuepidJudgment = getJudgmentForTitle(result.title) !== null;
       const hasManualJudgment = localJudgments[`${source}_${recordId}`] !== undefined;
       
       console.log(`Checking judgments for ${source} - ${result.title}:`, {
         recordId,
-        hasQuepidJudgment,
         hasManualJudgment,
         manualJudgment: localJudgments[`${source}_${recordId}`]
       });
       
-      if (hasQuepidJudgment) acc.quepid++;
-      if (hasManualJudgment) acc.manual++;
-      if (hasQuepidJudgment || hasManualJudgment) acc.total++;
+      if (hasManualJudgment) {
+        acc.manual++;
+        acc.total++;
+      }
       
       return acc;
-    }, { quepid: 0, manual: 0, total: 0 }) : { quepid: 0, manual: 0, total: 0 };
+    }, { manual: 0, total: 0 }) : { manual: 0, total: 0 };
 
     console.log(`Final counts for ${source}:`, counts);
 
@@ -1367,8 +1340,7 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
       { source: 'scholar', value: calculateNDCG(searchResults?.results?.scholar, 10, 'scholar') },
       { source: 'semanticScholar', value: calculateNDCG(searchResults?.results?.semanticScholar, 10, 'semanticScholar') },
       { source: 'webOfScience', value: calculateNDCG(searchResults?.results?.webOfScience, 10, 'webOfScience') },
-      { source: 'sciXDev', value: calculateNDCG(searchResults?.results?.sciXDev, 10, 'sciXDev') },
-      { source: 'quepid', value: calculateNDCG(quepidResults, 10, 'quepid') }
+      { source: 'sciXDev', value: calculateNDCG(searchResults?.results?.sciXDev, 10, 'sciXDev') }
     ].filter(item => item.value !== null);
 
     // Sort by NDCG value in descending order
@@ -1425,10 +1397,7 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
           {counts.total > 0 ? (
           <>
           Total Judgments: {counts.total}
-          {counts.quepid > 0 && ` (Quepid: ${counts.quepid}`}
-          {counts.quepid > 0 && counts.manual > 0 && ' | '}
-          {counts.manual > 0 && `Manual: ${counts.manual}`}
-          {counts.quepid > 0 && ')'}
+          {counts.manual > 0 && ` (Manual: ${counts.manual})`}
           </>
           ) : (
           'No judgments'
@@ -1466,8 +1435,6 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
             primary={`No ${source === 'sciXDev' ? 'SciX Development API' : source} results available`}
             secondary={source === 'boosted' ? 
               "Configure and apply boost factors to see how they affect the ranking" :
-              source === 'quepid' ? 
-              "Enter a Quepid case ID to see relevance judgments" :
               "No matching results found"}
           />
         </ListItem>
@@ -1496,44 +1463,7 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
     );
   };
 
-  // Modify the createJudgmentMap function
-  const createJudgmentMap = useCallback((quepidResults) => {
-    if (!quepidResults) return {};
-    
-    const map = {};
-    console.log('Creating judgment map from Quepid results:', quepidResults);
-    
-    quepidResults.forEach(result => {
-      // Log the raw result structure
-      console.log('Processing Quepid result:', result);
-      
-      // Check for judgment score in different possible locations
-      const judgmentScore = result.judgment_score ?? result.score ?? result.rating ?? result.judgment;
-      const title = result.title;
-      
-      if (title && judgmentScore !== undefined) {
-        const normalizedTitle = normalizeTitle(title);
-        map[normalizedTitle] = judgmentScore;
-        console.log(`Added judgment for title: "${title}" -> "${normalizedTitle}" with score: ${judgmentScore}`);
-      } else {
-        console.log('Skipping result due to missing title or score:', result);
-      }
-    });
-    
-    console.log('Final judgment map:', map);
-    return map;
-  }, []);
 
-  // Add this effect to update the judgment map when Quepid results change
-  useEffect(() => {
-    if (quepidResults && Array.isArray(quepidResults)) {
-      console.log('Quepid results updated:', quepidResults);
-      const newMap = createJudgmentMap(quepidResults);
-      setJudgmentMap(newMap || {});
-    } else {
-      setJudgmentMap({});
-    }
-  }, [quepidResults, createJudgmentMap]);
 
   // Function to handle judgment selection
   const handleJudgmentSelect = (recordId, judgment, sourceId) => {
@@ -1612,11 +1542,9 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
   const renderJudgmentSelector = (record) => {
     const recordId = record.bibcode || normalizeTitle(record.title);
     const sourceId = record.source_id || 'original';
-    const quepidJudgment = getJudgmentForTitle(record.title);
     const userJudgment = localJudgments[`${sourceId}_${recordId}`];
     const prevJudgments = previousJudgments[recordId] || [];
-    const currentJudgment = userJudgment?.judgment !== undefined ? userJudgment.judgment : quepidJudgment;
-    const hasQuepidJudgment = quepidJudgment !== null;
+    const currentJudgment = userJudgment?.judgment !== undefined ? userJudgment.judgment : null;
     const hasPreviousJudgments = prevJudgments.length > 0;
 
     // Debug logging for judgment selector
@@ -1637,17 +1565,7 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
     return (
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          {hasQuepidJudgment && (
-            <Tooltip title={`Quepid Judgment: ${quepidJudgment}`}>
-              <Chip 
-                label="Quepid" 
-                size="small"
-                variant="outlined"
-                color="info"
-                sx={{ height: 20, '& .MuiChip-label': { px: 1, fontSize: '0.7rem' } }}
-              />
-            </Tooltip>
-          )}
+
           {hasPreviousJudgments && (
             <Tooltip title={`Previous Judgments: ${prevJudgments.length} (Avg: ${avgPreviousJudgment.toFixed(2)})`}>
               <Chip 
@@ -1768,12 +1686,9 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
     searchResults?.results?.ads?.forEach(record => {
       const recordId = record.bibcode || normalizeTitle(record.title);
       const userJudgment = localJudgments[`original_${recordId}`];
-      const quepidJudgment = getJudgmentForTitle(record.title);
 
       if (userJudgment !== undefined) {
         addRecordWithJudgment(record, userJudgment, 'ads', userJudgment.type);
-      } else if (quepidJudgment !== null && quepidJudgment !== undefined) {
-        addRecordWithJudgment(record, { judgment: quepidJudgment }, 'ads', 'quepid');
       }
     });
 
@@ -1814,8 +1729,7 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
       original: calculateNDCG(searchResults?.results?.ads, 10, 'original'),
       boosted: calculateNDCG(boostedResults?.results?.ads, 10, 'boosted'),
       scholar: calculateNDCG(searchResults?.results?.scholar, 10, 'scholar'),
-      sciXDev: calculateNDCG(searchResults?.results?.sciXDev, 10, 'sciXDev'),
-      quepid: calculateNDCG(quepidResults, 10, 'quepid')
+      sciXDev: calculateNDCG(searchResults?.results?.sciXDev, 10, 'sciXDev')
     };
 
     // Helper function to pad string to fixed width
@@ -2370,12 +2284,9 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
       searchResults?.results?.ads?.forEach(record => {
         const recordId = record.bibcode || normalizeTitle(record.title);
         const userJudgment = localJudgments[`original_${recordId}`];
-        const quepidJudgment = getJudgmentForTitle(record.title);
 
         if (userJudgment !== undefined) {
           addJudgment(record, userJudgment, 'ADS');
-        } else if (quepidJudgment !== null) {
-          addJudgment(record, { judgment: quepidJudgment }, 'ADS');
         }
       });
 

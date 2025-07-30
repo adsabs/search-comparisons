@@ -25,7 +25,7 @@ from .api.routes.debug_routes import router as debug_router
 from .api.routes.experiment_routes import router as experiment_router, back_compat_router
 from .api.routes.query_intent import router as query_intent_router
 from .api.routes.health import router as health_router
-from .routes.quepid import router as quepid_router
+
 from .routes.judgement import router as judgement_router
 from .api.models import ErrorResponse
 from .core.init_db import init_db
@@ -227,7 +227,7 @@ app.include_router(experiment_router)
 app.include_router(back_compat_router)  # Include the backward compatibility router
 app.include_router(query_intent_router)  # Include the query intent router
 app.include_router(health_router)  # Include the health check router
-app.include_router(quepid_router, prefix="/api/quepid")  # Include the Quepid router
+
 app.include_router(judgement_router, prefix="/api")  # Include the judgment router
 
 
