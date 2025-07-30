@@ -32,12 +32,17 @@ Note: Most of the relevant search testing will happen under Experiments -> Relev
 cd search-comparisons
 
 # Start both frontend and backend (handles all configuration automatically)
-./startup.sh
+./startup_with_logs.sh
 ```
 **Notes:**
 - Frontend: http://localhost:3001
 - Backend API: http://localhost:8001  
 - API Docs: http://localhost:8001/docs
+
+**Stop servers when done:**
+```bash
+./stop_servers.sh
+```
 
 **What the startup script does:**
 - Automatically configures frontend-backend connection
@@ -1672,6 +1677,65 @@ CREATE INDEX idx_judgments_query_doc ON judgments(query_id, document_id);
 ---
 
 ## Recent Updates
+
+### Frontend Title Overlap Calculation Implementation (January 2025)
+
+**Issue:** The backend's title overlap calculation was failing to find matches between search engines, consistently returning zero overlap counts even when visual inspection revealed matching papers.
+
+**Root Cause:** Backend string matching was too strict and couldn't handle minor differences in title formatting, character encoding, or spacing that are common between different search engines.
+
+**Solution Implemented:** Frontend-based title overlap calculation with robust normalization:
+
+1. **Title Normalization Logic**:
+   - Convert to lowercase for case-insensitive matching
+   - Remove special characters and punctuation using regex `[^\w\s]`
+   - Normalize multiple consecutive spaces to single spaces
+   - Trim whitespace from both ends
+   - Handle null/undefined titles gracefully
+
+2. **Overlap Calculation**:
+   - Extract top 10 results from each search engine
+   - Apply normalization to all titles
+   - Filter out empty/null titles
+   - Use JavaScript Set intersection to find matches
+   - Return count of unique matching titles
+
+3. **Implementation Location**:
+   - **Main Search Page**: Added to `frontend/src/App.js` (lines 124-160, 919-931)
+   - **Boost Experiment Page**: Previously working in `frontend/src/components/BoostExperiment.js`
+   - Functions: `normalizeTitle()` and `calculateTitleOverlap()`
+
+4. **Integration Points**:
+   - Main search comparison table: Replaces backend `stats.overlap` with `frontendOverlap`
+   - Boost experiment headers: Shows overlap counts in column headers
+   - Both pages now use identical logic for consistency
+
+**Result:** Title overlap counts now accurately reflect matching papers between search engines, with the "Total Overlap" column showing correct values instead of zero.
+
+**Technical Implementation:**
+```javascript
+const normalizeTitle = (title) => {
+  if (!title) return '';
+  return String(title).toLowerCase()
+    .replace(/[^\w\s]/g, '')  // Remove special chars
+    .replace(/\s+/g, ' ')     // Normalize spaces
+    .trim();
+};
+
+const calculateTitleOverlap = (results1, results2) => {
+  const titles1 = results1.slice(0, 10)
+    .map(result => normalizeTitle(result.title))
+    .filter(title => title);
+  const titles2 = results2.slice(0, 10)
+    .map(result => normalizeTitle(result.title))
+    .filter(title => title);
+  
+  const titleSet1 = new Set(titles1);
+  const titleSet2 = new Set(titles2);
+  const intersection = new Set([...titleSet1].filter(title => titleSet2.has(title)));
+  return intersection.size;
+};
+```
 
 ### SciX Development Integration Fix (January 2025)
 

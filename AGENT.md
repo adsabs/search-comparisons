@@ -9,7 +9,8 @@ If there is an environment in the directory you want to run code in make sure th
 - **Lint**: `ruff check backend/` or `black backend/`
 - **Format**: `black backend/`
 - **Type check**: `mypy backend/`
-- **Start local**: `./startup.sh` (starts backend on :8001, frontend on :3001)
+- **Start local**: `./startup_with_logs.sh` (starts backend on :8001, frontend on :3001)
+- **Stop servers**: `./stop_servers.sh` (stops both backend and frontend)
 - **Backend only**: `cd backend && python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8001`
 
 ## Ports

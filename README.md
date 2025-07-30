@@ -19,8 +19,11 @@ A powerful search comparison tool that aggregates and analyzes results from mult
 ## Quick Start
 
 ```bash
-# Start both frontend and backend
-./startup.sh
+# Start both frontend and backend (with logging)
+./startup_with_logs.sh
+
+# Stop servers when done
+./stop_servers.sh
 
 # Access the application
 # Frontend: http://localhost:3001
@@ -130,6 +133,7 @@ backend/
    - Citation count analysis
    - Publication date comparison
    - Document type analysis
+   - **Frontend Title Overlap Calculation**: Client-side title matching with normalization for accurate overlap counts
 
 4. **Performance Optimization**
    - LRU caching with TTL
@@ -152,7 +156,7 @@ The application uses environment variables for configuration. Key settings inclu
 - `LLM_TEMPERATURE`: Temperature setting for LLM generation
 - `LLM_MAX_TOKENS`: Maximum tokens for LLM generation
 
-**Note**: Ollama must be installed and running. The `./startup.sh` script automatically configures all services.
+**Note**: Ollama must be installed and running. The `./startup_with_logs.sh` script automatically configures all services.
 - `CACHE_TTL`: Cache time-to-live in seconds
 - `CACHE_MAX_SIZE`: Maximum cache size
 
@@ -176,7 +180,7 @@ The application uses environment variables for configuration. Key settings inclu
 3. Set up environment variables
 4. Run the application:
    ```bash
-   ./startup.sh
+   ./startup_with_logs.sh
    ```
 
 ### Testing
