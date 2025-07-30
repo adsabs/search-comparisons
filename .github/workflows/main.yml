@@ -24,6 +24,23 @@ jobs:
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         if [ -f backend/requirements.txt ]; then pip install -r backend/requirements.txt; fi
     
+    - name: Lint with ruff
+      run: |
+        pip install ruff
+        ruff check backend/
+    
+    - name: Security scan with safety
+      run: |
+        pip install safety
+        safety check -r requirements.txt
+        safety check -r backend/requirements.txt || true
+    
+    - name: Dependency vulnerability scan with pip-audit
+      run: |
+        pip install pip-audit
+        pip-audit -r requirements.txt || true
+        pip-audit -r backend/requirements.txt || true
+    
     - name: Run tests
       run: |
         cd backend
@@ -31,32 +48,17 @@ jobs:
       env:
         APP_ENVIRONMENT: test
 
+    - name: Run tests with coverage
+      run: |
+        cd backend
+        pip install pytest-cov
+        pytest --cov=backend --cov-report=xml
+    
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./backend/coverage.xml
 
-- name: Lint with ruff
-  run: |
-    pip install ruff
-    ruff check .
-
-
-- name: Run tests with coverage
-  run: |
-    pip install pytest pytest-cov
-    pytest --cov=backend --cov-report=xml
-
-- name: Upload coverage to Codecov
-  uses: codecov/codecov-action@v3
-  with:
-    file: ./coverage.xml
-
-deploy-staging:
-  if: github.ref == 'refs/heads/develop'
-  # ...deployment steps for staging
-
-deploy-production:
-  if: github.ref == 'refs/heads/main'
-  # ...deployment steps for production
-
-        
   # If you're using Render for deployment
   deploy:
     needs: test

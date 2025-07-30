@@ -5,6 +5,7 @@ This module provides structured logging with automatic redaction of API keys,
 passwords, tokens, and other sensitive information.
 """
 import logging
+import logging.handlers
 import re
 import uuid
 from typing import Any, Dict, Optional, Set
@@ -35,6 +36,17 @@ class SensitiveDataRedactionFilter(logging.Filter):
             # API keys and tokens (various formats)
             (re.compile(r'\b(?:api[_-]?key|token|secret|password)\s*[:=]\s*["\']?([a-zA-Z0-9_\-]{8,})["\']?', re.IGNORECASE), '[REDACTED:API_KEY]'),
             (re.compile(r'\b(?:bearer\s+)?([a-zA-Z0-9_\-]{20,})\b', re.IGNORECASE), '[REDACTED:TOKEN]'),
+            
+            # JWT tokens (more specific pattern)
+            (re.compile(r'\beyJ[a-zA-Z0-9_\-]+\.[a-zA-Z0-9_\-]+\.[a-zA-Z0-9_\-]*\b'), '[REDACTED:JWT_TOKEN]'),
+            
+            # Basic auth credentials
+            (re.compile(r'\bBasic\s+([A-Za-z0-9+/]+=*)', re.IGNORECASE), 'Basic [REDACTED:BASIC_AUTH]'),
+            (re.compile(r'\bAuthorization:\s*Basic\s+([A-Za-z0-9+/]+=*)', re.IGNORECASE), 'Authorization: Basic [REDACTED:BASIC_AUTH]'),
+            
+            # Bearer tokens in headers
+            (re.compile(r'\bAuthorization:\s*Bearer\s+([a-zA-Z0-9_\-\.]+)', re.IGNORECASE), 'Authorization: Bearer [REDACTED:BEARER_TOKEN]'),
+            (re.compile(r'\bBearer\s+([a-zA-Z0-9_\-\.]{20,})', re.IGNORECASE), 'Bearer [REDACTED:BEARER_TOKEN]'),
             
             # Common API key patterns
             (re.compile(r'\b[a-f0-9]{32}\b'), '[REDACTED:MD5_HASH]'),
@@ -171,15 +183,23 @@ class StructuredFormatter(logging.Formatter):
 
 
 def setup_secure_logging(app_name: str = "search-comparisons", 
-                        log_level: str = "INFO",
-                        log_file: Optional[str] = None) -> logging.Logger:
+                         log_level: str = "INFO",
+                         log_file: Optional[str] = None,
+                         enable_rotation: bool = True,
+                         rotation_when: str = "midnight",
+                         rotation_interval: int = 1,
+                         rotation_backup_count: int = 30) -> logging.Logger:
     """
-    Set up secure logging with redaction filters.
+    Set up secure logging with redaction filters and optional log rotation.
     
     Args:
         app_name: Name of the application
         log_level: Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
         log_file: Optional log file path
+        enable_rotation: Whether to enable log rotation
+        rotation_when: When to rotate logs ('S', 'M', 'H', 'D', 'midnight', 'W0'-'W6')
+        rotation_interval: Rotation interval
+        rotation_backup_count: Number of backup files to keep
         
     Returns:
         logging.Logger: Configured logger
@@ -208,7 +228,19 @@ def setup_secure_logging(app_name: str = "search-comparisons",
     
     # File handler with structured logging if log file specified
     if log_file:
-        file_handler = logging.FileHandler(log_file)
+        if enable_rotation:
+            # Use rotating file handler for production
+            file_handler = logging.handlers.TimedRotatingFileHandler(
+                filename=log_file,
+                when=rotation_when,
+                interval=rotation_interval,
+                backupCount=rotation_backup_count,
+                encoding='utf-8'
+            )
+        else:
+            # Use simple file handler for development
+            file_handler = logging.FileHandler(log_file, encoding='utf-8')
+        
         file_handler.setLevel(getattr(logging, log_level.upper()))
         file_handler.addFilter(redaction_filter)
         file_handler.setFormatter(structured_formatter)

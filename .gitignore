@@ -62,7 +62,16 @@ frontend/node_modules/.cache/
 
 # Logs
 logs/
+/logs/*
 *.log
+backend.log
+frontend.log
+startup.log
+
+# Runtime files
+*.pid
+backend.pid
+frontend.pid
 
 # IDEs and editors
 .idea/

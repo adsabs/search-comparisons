@@ -111,7 +111,7 @@ class Settings(BaseSettings):
     DEFAULT_SEARCH_RESULTS: int = 20
     
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=[".env", ".env.local"],
         env_file_encoding="utf-8",
         case_sensitive=True,
         extra="allow"  # Allow extra fields in environment variables
