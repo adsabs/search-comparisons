@@ -1,5 +1,11 @@
 # Search Comparisons Tool - Complete Documentation
 
+## 📖 Documentation Navigation
+
+**New to the tool?** Start with **[ONBOARDING.md](ONBOARDING.md)** for complete setup and first-time user guidance.
+
+**Running in production?** See **[MAINTENANCE_GUIDE.md](MAINTENANCE_GUIDE.md)** for operations, monitoring, and troubleshooting.
+
 ## Overview
 
 The Search Comparisons Tool is a comprehensive web application designed to compare search results across multiple scholarly search engines, collect relevance judgments, test changes to the ADS/SciX search experience, and analyze search performance metrics. It serves three primary audiences: users providing relevance judgments, technical staff adding features, and scientists testing algorithm changes.
@@ -8,6 +14,12 @@ Note: Most of the relevant search testing will happen under Experiments -> Relev
 
 ## Table of Contents
 
+### 🚀 Quick Access
+- **[Setup & Installation](ONBOARDING.md#quick-5-minute-setup)** - Get running in 5 minutes
+- **[Emergency Troubleshooting](MAINTENANCE_GUIDE.md#emergency-response-procedures)** - Fix critical issues fast
+- **[Daily Operations](MAINTENANCE_GUIDE.md#daily-operations-checklist)** - Monitoring and health checks
+
+### 📋 Detailed Guides
 1. [Quick Start Guide](#quick-start-guide)
 2. [User Guide: Relevance Judgment Collection](#user-guide-relevance-judgment-collection)
 3. [Developer Guide: Adding Features](#developer-guide-adding-features)
@@ -333,6 +345,10 @@ Transformed: proper_ads_syntax
 ---
 
 ## Developer Guide: Adding Features
+
+💡 **For comprehensive developer onboarding, see [ONBOARDING.md](ONBOARDING.md#development-workflows)**
+
+🔧 **For production maintenance and troubleshooting, see [MAINTENANCE_GUIDE.md](MAINTENANCE_GUIDE.md)**
 
 Recommendation: Use the AGENT.md file associated with this project with your coding agent of choice (Claude Code, Amp, Copilot, Cursor, etc.) for any modifications to the project. The project was 100% created by AI coding agents, and any questions about or revisions to the codebase should be addressable through best practices using coding agents.
 
@@ -1760,6 +1776,8 @@ const calculateTitleOverlap = (results1, results2) => {
 ---
 
 ## Troubleshooting
+
+🔧 **For comprehensive troubleshooting, monitoring, and maintenance procedures, see [MAINTENANCE_GUIDE.md](MAINTENANCE_GUIDE.md)**
 
 ### Common Issues and Solutions
 

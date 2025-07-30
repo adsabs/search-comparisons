@@ -4,17 +4,25 @@ A powerful search comparison tool that aggregates and analyzes results from mult
 
 ## 📖 Documentation
 
-**For detailed information, see the comprehensive documentation:**
+**Complete documentation suite for all stakeholders:**
 
-- **[DOCUMENTATION.md](DOCUMENTATION.md)** - Complete guide for all users
+### 🎯 Core Documentation
+- **[ONBOARDING.md](ONBOARDING.md)** - **START HERE** - Complete setup and onboarding guide
+- **[DOCUMENTATION.md](DOCUMENTATION.md)** - Detailed user guides and workflows
+- **[MAINTENANCE_GUIDE.md](MAINTENANCE_GUIDE.md)** - Operations, troubleshooting, and monitoring
 - **[QUICK_REFERENCE.md](QUICK_REFERENCE.md)** - Quick reference for common tasks
 
-### Documentation Sections
-- **User Guide**: For relevance judgment collection and evaluation
-- **Developer Guide**: For adding features and maintaining the system  
-- **Scientist Guide**: For algorithm testing and search experiments
-- **Architecture Overview**: System design and data flow
-- **Deployment & Maintenance**: Production setup and troubleshooting
+### 📚 Documentation by Role
+- **🔬 Research Users**: Start with [ONBOARDING.md](ONBOARDING.md) → [User Guide in DOCUMENTATION.md](DOCUMENTATION.md#user-guide-relevance-judgment-collection)
+- **⚙️ SciX Engineers**: [ONBOARDING.md](ONBOARDING.md) → [Developer Guide in DOCUMENTATION.md](DOCUMENTATION.md#developer-guide-adding-features) → [MAINTENANCE_GUIDE.md](MAINTENANCE_GUIDE.md)
+- **🧪 Research Scientists**: [ONBOARDING.md](ONBOARDING.md) → [Scientist Guide in DOCUMENTATION.md](DOCUMENTATION.md#scientist-guide-algorithm-testing)
+- **🚀 Operations Teams**: [MAINTENANCE_GUIDE.md](MAINTENANCE_GUIDE.md) for deployment and monitoring
+
+### 🏗️ Technical Deep-Dives
+- **Architecture Overview**: System design and component interactions
+- **API Integration**: Adding new search engines and services
+- **LLM Configuration**: Query intent and natural language processing
+- **Performance Tuning**: Caching, monitoring, and optimization
 
 ## Quick Start
 

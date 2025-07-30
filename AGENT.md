@@ -2,6 +2,7 @@
 
 Do not run any indefinite processes unless they are moved to the background
 If there is an environment in the directory you want to run code in make sure the environment is active
+For example before running any tests go to the root directory search-comparisons and do: source venv/bin/activate to activate the virtual environment for this project
 ## Commands
 - **Test all**: `pytest backend/tests/`
 - **Test single**: `pytest backend/tests/test_filename.py::test_function`
