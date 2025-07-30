@@ -52,33 +52,15 @@ logger.info(f"ADS_SOLR_PASSWORD set: {'Yes' if os.getenv('ADS_SOLR_PASSWORD') el
 # Ensure critical environment variables are set
 ADS_API_KEY = os.getenv("ADS_API_KEY", "")
 if not ADS_API_KEY:
-    # Check if ADS_API_TOKEN is available instead
-    ads_api_token = os.getenv("ADS_API_TOKEN", "")
-    if ads_api_token:
-        print("Found ADS_API_TOKEN instead. Setting as ADS_API_KEY.")
-        os.environ["ADS_API_KEY"] = ads_api_token
-    else:
-        # No fallback - require environment variable to be set
-        logger.error("ADS_API_KEY environment variable is required but not set")
-        print("ERROR: ADS_API_KEY environment variable is required but not set")
-        print("Please set ADS_API_KEY in your environment or .env file")
+    logger.error("ADS_API_KEY environment variable is required but not set")
+    print("ERROR: ADS_API_KEY environment variable is required but not set")
+    print("Please set ADS_API_KEY in your environment or .env file")
 
 # Check for Web of Science API key
 WEB_OF_SCIENCE_API_KEY = os.getenv("WEB_OF_SCIENCE_API_KEY", "")
 if not WEB_OF_SCIENCE_API_KEY:
-    # Check for alternative key names
-    alt_keys = ["WOS_API_KEY", "WEBOFSCIENCE_API_KEY", "WOS_KEY"]
-    for key_name in alt_keys:
-        alt_key = os.getenv(key_name, "")
-        if alt_key:
-            print(f"Found {key_name} instead. Setting as WEB_OF_SCIENCE_API_KEY.")
-            os.environ["WEB_OF_SCIENCE_API_KEY"] = alt_key
-            break
-    
-    # If still no key, warn but allow the app to start
-    if not os.environ.get("WEB_OF_SCIENCE_API_KEY"):
-        logger.warning("WEB_OF_SCIENCE_API_KEY environment variable not set - Web of Science searches will be disabled")
-        print("Warning: WEB_OF_SCIENCE_API_KEY not set - Web of Science searches will be disabled")
+    logger.warning("WEB_OF_SCIENCE_API_KEY environment variable not set - Web of Science searches will be disabled")
+    print("Warning: WEB_OF_SCIENCE_API_KEY not set - Web of Science searches will be disabled")
 
 # Set up secure logging with redaction
 logs_dir = Path(__file__).parent.parent / 'logs'

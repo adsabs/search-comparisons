@@ -17,22 +17,14 @@ logger = logging.getLogger(__name__)
 
 # API Constants - Exactly matching the search-engine-comparator
 WOS_API_URL = "https://api.clarivate.com/apis/wos-starter/v1/"
-WOS_API_KEY = os.environ.get("WEB_OF_SCIENCE_API_KEY", "")  # Using the exact environment variable name
+WOS_API_KEY = os.environ.get("WEB_OF_SCIENCE_API_KEY", "")
 
 # Log the API key for debugging (masking most of it)
 if WOS_API_KEY:
     masked_key = f"{WOS_API_KEY[:4]}...{WOS_API_KEY[-4:]}" if len(WOS_API_KEY) > 8 else "[MASKED]"
     logger.info(f"WEB_OF_SCIENCE_API_KEY found in environment: {masked_key}")
 else:
-    logger.error("WEB_OF_SCIENCE_API_KEY not found in environment - searched for 'WEB_OF_SCIENCE_API_KEY'")
-    # Try alternate environment variable names
-    alternate_keys = ["WOS_API_KEY", "WEBOFSCIENCE_API_KEY", "WOS_KEY"]
-    for alt_key in alternate_keys:
-        alt_value = os.environ.get(alt_key)
-        if alt_value:
-            logger.info(f"Found alternative key '{alt_key}' - using this instead")
-            WOS_API_KEY = alt_value
-            break
+    logger.error("WEB_OF_SCIENCE_API_KEY not found in environment")
 
 NUM_RESULTS = 20
 TIMEOUT_SECONDS = 30  # Increased to match search-engine-comparator
