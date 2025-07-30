@@ -47,7 +47,7 @@ class QueryResponse(BaseModel):
 
 @router.post("/intent-transform-query", response_model=QueryResponse)
 @limiter.limit("5/minute")
-async def transform_query(http_request: Request, request: QueryRequest) -> QueryResponse:
+async def transform_query(request: Request, query_request: QueryRequest) -> QueryResponse:
     """
     Transform a search query based on inferred intent.
     
@@ -60,15 +60,15 @@ async def transform_query(http_request: Request, request: QueryRequest) -> Query
     try:
         # Get transformed query and results
         result = await query_intent_service.search(
-            query=request.query,
-            use_cache=request.use_cache
+            query=query_request.query,
+            use_cache=query_request.use_cache
         )
         
         return QueryResponse(
-            original_query=request.query,
+            original_query=query_request.query,
             intent=result.get("intent", "unknown"),
             explanation=result.get("explanation", ""),
-            transformed_query=result.get("transformed_query", request.query),
+            transformed_query=result.get("transformed_query", query_request.query),
             results=result.get("results", {"numFound": 0, "docs": []})
         )
     except Exception as e:

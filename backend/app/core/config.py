@@ -80,7 +80,7 @@ class Settings(BaseSettings):
     
     # LLM Configuration
     LLM_ENABLED: bool = os.getenv("LLM_ENABLED", "true").lower() == "true"
-    LLM_MODEL_NAME: str = os.getenv("LLM_MODEL_NAME", "qwen2:7b")
+    LLM_MODEL_NAME: str = os.getenv("LLM_MODEL_NAME", "phi:2.7b")
     LLM_TEMPERATURE: float = float(os.getenv("LLM_TEMPERATURE", "0.7"))
     LLM_MAX_TOKENS: int = int(os.getenv("LLM_MAX_TOKENS", "1000"))
     LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "ollama")

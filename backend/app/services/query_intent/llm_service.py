@@ -489,7 +489,7 @@ class LLMService:
                     self.api_endpoint,
                     json=request_data,
                     headers={"Content-Type": "application/json"},
-                    timeout=30
+                    timeout=60
                 ) as response:
                     logger.info(f"Response status code: {response.status}")
                     logger.info(f"Response headers: {response.headers}")
@@ -620,13 +620,38 @@ class LLMService:
                 
             except Exception as e:
                 logger.error(f"Error parsing LLM response: {str(e)}")
-                # Fallback to basic query
-                return QueryIntent(
-                    intent="basic",
-                    explanation="Using basic query interpretation",
-                    transformed_query=f'abs:"{query}"',
-                    intent_confidence=0.5
-                )
+                # Fallback to basic query based on content
+                if "papers by" in query.lower() or "by " in query.lower():
+                    # Author query fallback
+                    author_name = query.lower().replace("papers by", "").replace("by", "").strip()
+                    if author_name:
+                        # Try to format as lastname, firstname
+                        parts = author_name.split()
+                        if len(parts) >= 1:
+                            lastname = parts[-1].title()
+                            firstname = parts[0].title() if len(parts) > 1 else ""
+                            if firstname:
+                                fallback_query = f'author:"{lastname}, {firstname}" OR author:"{lastname}, {firstname[0]}"'
+                            else:
+                                fallback_query = f'author:"{lastname}"'
+                        else:
+                            fallback_query = f'author:"{author_name.title()}"'
+                    else:
+                        fallback_query = f'abs:"{query}"'
+                    return QueryIntent(
+                        intent="author",
+                        explanation="Using fallback author query interpretation",
+                        transformed_query=fallback_query,
+                        intent_confidence=0.3
+                    )
+                else:
+                    # Topic query fallback
+                    return QueryIntent(
+                        intent="topic",
+                        explanation="Using fallback topic query interpretation",
+                        transformed_query=f'abs:"{query}"',
+                        intent_confidence=0.3
+                    )
                 
         except Exception as e:
             logger.error(f"Error in interpret_query: {str(e)}")
