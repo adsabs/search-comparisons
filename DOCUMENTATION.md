@@ -49,7 +49,7 @@ cd search-comparisons
 **Notes:**
 - Frontend: http://localhost:3001
 - Backend API: http://localhost:8001  
-- API Docs: http://localhost:8001/docs
+- API Docs: http://localhost:8001/api/docs
 
 **Stop servers when done:**
 ```bash

@@ -31,7 +31,7 @@ cd /path/to/search-comparisons
 **Access URLs:**
 - **Frontend**: http://localhost:3001
 - **Backend API**: http://localhost:8001  
-- **API Documentation**: http://localhost:8001/docs
+- **API Documentation**: http://localhost:8001/api/docs
 
 ### First-Time Usage Test
 1. Open http://localhost:3001
@@ -440,9 +440,21 @@ lsof app.db
 - **Query Processing**: [`query_intent/llm_service.py`](backend/app/services/query_intent/llm_service.py) - AI component
 
 ### API Documentation
-- **Interactive Docs**: http://localhost:8001/docs (when running)
+- **[Complete API Reference](API_REFERENCE.md)** - Comprehensive guide with examples
+- **Interactive Swagger UI**: http://localhost:8001/api/docs (when running)
+- **ReDoc Documentation**: http://localhost:8001/api/redoc (alternative view)
+- **OpenAPI Schema**: http://localhost:8001/api/openapi.json (machine-readable)
 - **Schema Reference**: [`backend/app/api/`](backend/app/api/) directory
-- **External APIs**: Each service file contains endpoint documentation
+
+#### Key API Endpoints
+- **Search**: `POST /api/search` - Multi-engine search with comparison metrics
+- **Query Intent**: `POST /api/intent-transform-query` - LLM-powered query transformation
+- **Boost Experiments**: `POST /api/experiments/boost` - Algorithm testing with ranking adjustments
+- **Judgements**: `POST /api/judgements` - Relevance judgment submission
+- **Health**: `GET /api/health` - System health monitoring
+- **Debug**: `GET /api/debug/*` - Development and troubleshooting endpoints
+
+📖 **For detailed examples and integration guides, see [API_REFERENCE.md](API_REFERENCE.md)**
 
 ### Research Papers & Context
 - **Search Evaluation**: NDCG, Jaccard similarity, title overlap metrics

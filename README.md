@@ -9,6 +9,7 @@ A powerful search comparison tool that aggregates and analyzes results from mult
 ### 🎯 Core Documentation
 - **[ONBOARDING.md](ONBOARDING.md)** - **START HERE** - Complete setup and onboarding guide
 - **[DOCUMENTATION.md](DOCUMENTATION.md)** - Detailed user guides and workflows
+- **[API_REFERENCE.md](API_REFERENCE.md)** - Complete API documentation with examples
 - **[MAINTENANCE_GUIDE.md](MAINTENANCE_GUIDE.md)** - Operations, troubleshooting, and monitoring
 - **[QUICK_REFERENCE.md](QUICK_REFERENCE.md)** - Quick reference for common tasks
 
@@ -20,7 +21,7 @@ A powerful search comparison tool that aggregates and analyzes results from mult
 
 ### 🏗️ Technical Deep-Dives
 - **Architecture Overview**: System design and component interactions
-- **API Integration**: Adding new search engines and services
+- **[API Integration](API_REFERENCE.md)**: Complete REST API documentation with examples
 - **LLM Configuration**: Query intent and natural language processing
 - **Performance Tuning**: Caching, monitoring, and optimization
 
@@ -36,7 +37,7 @@ A powerful search comparison tool that aggregates and analyzes results from mult
 # Access the application
 # Frontend: http://localhost:3001
 # Backend API: http://localhost:8001
-# API Docs: http://localhost:8001/docs
+# API Docs: http://localhost:8001/api/docs
 ```
 
 ## Project Overview
