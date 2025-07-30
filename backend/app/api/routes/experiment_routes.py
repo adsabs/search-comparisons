@@ -17,6 +17,8 @@ import os
 from fastapi import APIRouter, HTTPException, Query, Request, BackgroundTasks
 from pydantic import BaseModel
 
+from ...core.rate_limiting import limiter, rate_limit_experiment, rate_limit_moderate, rate_limit_log_analysis
+from ...core.logging import set_request_id, get_request_id, log_api_access
 from ...services import search_service
 from ...services.ads_service import get_ads_results
 from ...services.quepid_service import (
@@ -192,6 +194,7 @@ def find_closest_query(query: str, available_queries: List[str]) -> Optional[str
 
 
 @router.post("/boost", response_model=BoostResult)
+@limiter.limit("8/minute")
 async def boost_search_results(
     request: Request,
     boost_config: BoostConfig
@@ -417,7 +420,9 @@ def calculate_boost_stats(
 
 
 @router.post("/ab-test")
+@limiter.limit("8/minute")
 async def run_ab_test(
+    request: Request,
     search_request: SearchRequest,
     variation: str = Query("B", description="Test variation (A=default, B=experimental)")
 ) -> Dict[str, Any]:
@@ -499,7 +504,8 @@ async def run_ab_test(
 
 
 @router.get("/log-analysis")
-async def analyze_search_logs() -> Dict[str, Any]:
+@limiter.limit("5/minute")
+async def analyze_search_logs(request: Request) -> Dict[str, Any]:
     """
     Analyze search logs for patterns and performance metrics.
     
@@ -529,7 +535,9 @@ async def analyze_search_logs() -> Dict[str, Any]:
 
 
 @router.post("/quepid-evaluation", response_model=QuepidEvaluationResponse)
+@limiter.limit("8/minute")
 async def evaluate_search_with_quepid(
+    http_request: Request,
     request: QuepidEvaluationRequest,
     background_tasks: BackgroundTasks
 ) -> Dict[str, Any]:
@@ -627,7 +635,8 @@ async def evaluate_search_with_quepid(
         500: {"model": ErrorResponse}
     }
 )
-async def get_available_quepid_cases() -> List[Dict[str, Any]]:
+@limiter.limit("30/minute")
+async def get_available_quepid_cases(request: Request) -> List[Dict[str, Any]]:
     """
     Get a list of available Quepid cases.
     
@@ -811,7 +820,8 @@ async def boost_experiment_legacy(
 
 
 @router.post("/search", response_model=ExperimentResponse)
-async def run_experiment(request: ExperimentRequest) -> Dict[str, Any]:
+@limiter.limit("8/minute")
+async def run_experiment(http_request: Request, request: ExperimentRequest) -> Dict[str, Any]:
     """
     Run a search experiment using the query intent service.
     
@@ -858,7 +868,8 @@ async def run_experiment(request: ExperimentRequest) -> Dict[str, Any]:
 
 
 @router.get("/health")
-async def health_check() -> Dict[str, Any]:
+@limiter.limit("60/minute")
+async def health_check(request: Request) -> Dict[str, Any]:
     """
     Check the health of the experiment service.
     

@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 # SciX Development API Constants
 SCIX_DEV_API_URL = "https://playground.adsabs.harvard.edu/dev/solr/collection1/select"
 SCIX_DEV_USERNAME = "ads"
-SCIX_DEV_PASSWORD = "$kw7Thr&nUNBZ!"
+# Do not store credentials in code - use environment variables
 TIMEOUT_SECONDS = 15
 
 def _get_default_fields() -> List[str]:
@@ -131,10 +131,14 @@ async def get_scix_dev_results(
     """
     logger.info(f"[SciXDev] Query: '{query}', num_results: {num_results}")
     
-    # Get configuration from environment variables or fallback to hardcoded values
+    # Get configuration from environment variables
     dev_endpoint = os.getenv('SCIX_DEV_ENDPOINT', SCIX_DEV_API_URL)
     username = os.getenv('SCIX_DEV_USERNAME', SCIX_DEV_USERNAME)
-    password = os.getenv('SCIX_DEV_PASSWORD', SCIX_DEV_PASSWORD)
+    password = os.getenv('SCIX_DEV_PASSWORD')
+    
+    if not password:
+        logger.error("SCIX_DEV_PASSWORD environment variable is required but not set")
+        return []
     
     try:
         # Set default fields if not provided

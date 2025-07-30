@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 # API Constants
 QUEPID_API_URL = os.environ.get("QUEPID_API_URL", "https://quepid.herokuapp.com/api/")
-QUEPID_API_KEY = os.environ.get("QUEPID_API_KEY", "c707e3d691c5f681f31a05b4c68bb09fc402597f325213a2e6411beebf199405")  # Hardcoded API key
+QUEPID_API_KEY = os.environ.get("QUEPID_API_KEY")  # Require environment variable
 TIMEOUT_SECONDS = 30
 
 
@@ -88,6 +88,10 @@ class QuepidService:
         """
         self.api_url = QUEPID_API_URL  # Use the URL from environment variable
         self.api_key = QUEPID_API_KEY
+        
+        if not self.api_key:
+            logger.error("QUEPID_API_KEY environment variable is required but not set")
+            
         self.headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json"

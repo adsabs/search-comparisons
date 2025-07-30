@@ -3,20 +3,25 @@ Debug API routes for the search-comparisons application.
 
 This module contains route definitions for debug-related endpoints,
 used for diagnostics, testing, and development purposes.
+
+Security: These endpoints require authentication and IP whitelisting.
 """
 import logging
 import os
 import time
 from typing import Dict, List, Any
 
-from fastapi import APIRouter, HTTPException, Request, Query
+from fastapi import APIRouter, HTTPException, Request, Query, Depends
 
+from ...core.rate_limiting import limiter, rate_limit_debug, rate_limit_moderate, rate_limit_paper_lookup
+from ...core.logging import set_request_id, get_request_id, log_api_access
 from ...api.models import SearchResult
 from ...services.ads_service import get_bibcode_from_doi, get_ads_results
 from ...services.scholar_service import get_scholar_direct_html, get_scholar_results
 from ...services.semantic_scholar_service import get_semantic_scholar_results, get_paper_details_by_doi
 from ...services.web_of_science_service import get_web_of_science_results
 from ...services.search_service import get_paper_details
+from ...core.security import verify_debug_access
 
 # Setup logging
 logger = logging.getLogger(__name__)
@@ -26,11 +31,13 @@ router = APIRouter(
     prefix="/api/debug",
     tags=["debug"],
     responses={404: {"description": "Not found"}},
+    dependencies=[Depends(verify_debug_access)]  # Apply security to all debug routes
 )
 
 
 @router.get("/sources")
-async def list_available_sources() -> Dict[str, Any]:
+@limiter.limit("20/minute")
+async def list_available_sources(request: Request, _ = Depends(verify_debug_access)) -> Dict[str, Any]:
     """
     List all available search sources and their configuration.
     
@@ -50,13 +57,13 @@ async def list_available_sources() -> Dict[str, Any]:
 
 
 @router.get("/env")
-async def get_environment_info() -> Dict[str, Any]:
+@limiter.limit("20/minute")
+async def get_environment_info(request: Request, _ = Depends(verify_debug_access)) -> Dict[str, Any]:
     """
     Get information about the runtime environment.
     
     Returns information about the current environment, including
-    Python version, environment variables (with sensitive data masked),
-    and runtime settings.
+    Python version and select environment variables (with sensitive data masked).
     
     Returns:
         Dict[str, Any]: Dictionary of environment information
@@ -64,37 +71,47 @@ async def get_environment_info() -> Dict[str, Any]:
     import sys
     import platform
     
-    # Get environment variables (masking sensitive ones)
-    env_vars = {}
-    sensitive_vars = ["API_KEY", "SECRET", "PASSWORD", "TOKEN"]
+    # Only expose specific, non-sensitive environment variables
+    safe_env_vars = [
+        "ENVIRONMENT", "APP_ENVIRONMENT", "DEBUG", "LOG_LEVEL",
+        "FRONTEND_URL", "PORT", "HOST"
+    ]
     
-    for key, value in os.environ.items():
-        # Skip internal or non-string values
-        if not isinstance(value, str):
-            continue
-            
-        # Mask sensitive values
-        if any(sensitive in key.upper() for sensitive in sensitive_vars) and value:
-            if len(value) > 8:
-                masked_value = f"{value[:4]}...{value[-4:]}"
+    env_vars = {}
+    sensitive_vars = ["API_KEY", "SECRET", "PASSWORD", "TOKEN", "DATABASE", "DB"]
+    
+    for key in safe_env_vars:
+        value = os.environ.get(key)
+        if value is not None:
+            # Still mask any sensitive values in safe vars
+            if any(sensitive in key.upper() for sensitive in sensitive_vars):
+                if len(value) > 8:
+                    env_vars[key] = f"{value[:4]}...{value[-4:]}"
+                else:
+                    env_vars[key] = "[MASKED]"
             else:
-                masked_value = "[MASKED]"
-            env_vars[key] = masked_value
-        else:
-            env_vars[key] = value
+                env_vars[key] = value
+    
+    # Add status of critical API keys (existence only, not values)
+    api_key_status = {}
+    critical_keys = ["ADS_API_KEY", "WEB_OF_SCIENCE_API_KEY", "DEBUG_API_KEY"]
+    for key in critical_keys:
+        api_key_status[f"{key}_set"] = bool(os.environ.get(key))
     
     return {
-        "python_version": sys.version,
-        "platform": platform.platform(),
+        "python_version": sys.version.split()[0],  # Just version number
+        "platform": platform.system(),  # Just OS name
         "environment": os.environ.get("APP_ENVIRONMENT", "unknown"),
         "debug": os.environ.get("DEBUG", "False").lower() in ("true", "1", "t"),
         "environment_variables": env_vars,
+        "api_keys_status": api_key_status,
         "timestamp": time.time()
     }
 
 
 @router.get("/ping/{source}")
-async def ping_source(source: str) -> Dict[str, Any]:
+@limiter.limit("20/minute")
+async def ping_source(request: Request, source: str, _ = Depends(verify_debug_access)) -> Dict[str, Any]:
     """
     Ping a specific search source to check if it's available.
     
@@ -160,10 +177,13 @@ async def ping_source(source: str) -> Dict[str, Any]:
 
 
 @router.get("/search/{source}")
+@limiter.limit("20/minute")
 async def test_search_source(
+    request: Request,
     source: str, 
     query: str = Query(..., description="Search query string"),
-    limit: int = Query(5, description="Maximum number of results to return")
+    limit: int = Query(5, description="Maximum number of results to return"),
+    _ = Depends(verify_debug_access)
 ) -> Dict[str, Any]:
     """
     Test search for a specific source with a given query.
@@ -216,9 +236,12 @@ async def test_search_source(
 
 
 @router.get("/paper/{doi}")
+@limiter.limit("15/minute")
 async def get_paper_by_doi(
+    request: Request,
     doi: str,
-    sources: List[str] = Query(None, description="List of sources to query (default: all)")
+    sources: List[str] = Query(None, description="List of sources to query (default: all)"),
+    _ = Depends(verify_debug_access)
 ) -> Dict[str, Any]:
     """
     Get detailed paper information from multiple sources by DOI.
@@ -254,7 +277,8 @@ async def get_paper_by_doi(
 
 
 @router.get("/request-headers")
-async def get_request_headers(request: Request) -> Dict[str, Any]:
+@limiter.limit("20/minute")
+async def get_request_headers(request: Request, _ = Depends(verify_debug_access)) -> Dict[str, Any]:
     """
     Show the headers of the current request.
     

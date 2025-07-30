@@ -34,3 +34,14 @@ If there is an environment in the directory you want to run code in make sure th
 - **Logging**: Use module-level `logger = logging.getLogger(__name__)`
 - **Error handling**: Use structured exceptions, log errors before raising
 - **Naming**: snake_case for functions/vars, PascalCase for classes, descriptive names
+
+## Security Configuration
+- **Debug endpoints**: Secured with IP whitelist and optional API key authentication
+- **CORS**: Explicit origin list, credentials disabled, explicit methods/headers only
+- **TrustedHost**: Concrete domain list, no wildcards
+- **Security headers**: CSP, X-Frame-Options, X-Content-Type-Options, etc.
+- **Environment variables**: 
+  - `DEBUG_ENDPOINTS_ENABLED=false` (disable in production)
+  - `DEBUG_API_KEY=` (optional debug API key)
+  - `DEBUG_ALLOWED_IPS=127.0.0.1,::1` (IP whitelist for debug endpoints)
+- **Test security**: `python test_security_config.py`

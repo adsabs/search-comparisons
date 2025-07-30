@@ -18,6 +18,8 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
+from .core.rate_limiting import limiter, create_rate_limit_handler
+from .core.logging import setup_secure_logging, set_request_id, get_request_id, clear_request_id
 from .api.routes.search_routes import router as search_router
 from .api.routes.debug_routes import router as debug_router
 from .api.routes.experiment_routes import router as experiment_router, back_compat_router
@@ -28,8 +30,8 @@ from .routes.judgement import router as judgement_router
 from .api.models import ErrorResponse
 from .core.init_db import init_db
 
-# Initialize rate limiter
-limiter = Limiter(key_func=get_remote_address)
+# Import rate limiter from core module (already configured)
+# limiter is imported from .core.rate_limiting
 
 # Set up platform-specific fixes and environment variables first
 # Apply macOS SSL certificate handling fix if needed
@@ -37,9 +39,9 @@ if os.name == 'posix' and 'darwin' in os.uname().sysname.lower():
     import certifi
     os.environ['SSL_CERT_FILE'] = certifi.where()
 
-# Load environment variables from backend/.env
-backend_dir = Path(__file__).parent.parent
-env_path = backend_dir / '.env'
+# Load environment variables from root .env.local
+project_root = Path(__file__).parent.parent.parent
+env_path = project_root / '.env.local'
 load_dotenv(dotenv_path=env_path)
 
 # Log environment variables for debugging
@@ -56,9 +58,10 @@ if not ADS_API_KEY:
         print("Found ADS_API_TOKEN instead. Setting as ADS_API_KEY.")
         os.environ["ADS_API_KEY"] = ads_api_token
     else:
-        # Set emergency fallback for testing
-        print("Setting emergency fallback ADS_API_KEY for testing only")
-        os.environ["ADS_API_KEY"] = "F6pHGICMXXy4aiAWBR4gaFL4Ta72xdM8jVhHDOsm"
+        # No fallback - require environment variable to be set
+        logger.error("ADS_API_KEY environment variable is required but not set")
+        print("ERROR: ADS_API_KEY environment variable is required but not set")
+        print("Please set ADS_API_KEY in your environment or .env file")
 
 # Check for Web of Science API key
 WEB_OF_SCIENCE_API_KEY = os.getenv("WEB_OF_SCIENCE_API_KEY", "")
@@ -72,27 +75,21 @@ if not WEB_OF_SCIENCE_API_KEY:
             os.environ["WEB_OF_SCIENCE_API_KEY"] = alt_key
             break
     
-    # If still no key, set a placeholder for development
+    # If still no key, warn but allow the app to start
     if not os.environ.get("WEB_OF_SCIENCE_API_KEY"):
-        print("Setting placeholder WEB_OF_SCIENCE_API_KEY for development")
-        # This is not a real key, but prevents the "missing key" error for testing
-        os.environ["WEB_OF_SCIENCE_API_KEY"] = "dev_placeholder_key_not_for_production"
+        logger.warning("WEB_OF_SCIENCE_API_KEY environment variable not set - Web of Science searches will be disabled")
+        print("Warning: WEB_OF_SCIENCE_API_KEY not set - Web of Science searches will be disabled")
 
-# Set up logging
-# Create logs directory if it doesn't exist
+# Set up secure logging with redaction
 logs_dir = Path(__file__).parent.parent / 'logs'
 logs_dir.mkdir(exist_ok=True)
 
-# Configure logging to write to both file and console
-logging.basicConfig(
-    level=os.getenv("LOG_LEVEL", "INFO"),
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[
-        logging.FileHandler(logs_dir / 'app.log'),
-        logging.StreamHandler()
-    ]
+# Initialize secure logging
+logger = setup_secure_logging(
+    app_name="search-comparisons",
+    log_level=os.getenv("LOG_LEVEL", "INFO"),
+    log_file=str(logs_dir / 'app.log')
 )
-logger = logging.getLogger(__name__)
 
 # Log API key status (masked)
 ads_api_key = os.environ.get("ADS_API_KEY", "")
@@ -141,31 +138,38 @@ app = FastAPI(
 
 # Add rate limiter to app state
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+# Use custom rate limit handler with security logging
+app.add_exception_handler(RateLimitExceeded, create_rate_limit_handler())
 
-# Configure CORS
+# Import security functions
+from .core.security import get_allowed_origins, get_allowed_hosts, SecurityHeadersMiddleware
+
+# Configure CORS with explicit origins only
+allowed_origins = get_allowed_origins()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://localhost:3001",
-        "http://localhost:8000",
-        "https://search.sjarmak.ai",
-        "https://search-tool-api.onrender.com",
-        "https://search-tool.onrender.com",
-        os.environ.get("FRONTEND_URL", "https://search-tool.onrender.com")
-    ],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=allowed_origins,
+    allow_credentials=False,  # Disabled to prevent CSRF attacks
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],  # Explicit methods
+    allow_headers=[
+        "Accept",
+        "Accept-Language", 
+        "Content-Language",
+        "Content-Type",
+        "Authorization",
+        "X-Requested-With"
+    ],  # Explicit headers
 )
 
-# Add security headers middleware
+# Add security headers middleware with concrete domains
+allowed_hosts = get_allowed_hosts()
 app.add_middleware(
     TrustedHostMiddleware,
-    allowed_hosts=["*"]  # Configure this based on your domains
+    allowed_hosts=allowed_hosts
 )
 
+# Add additional security headers
+app.add_middleware(SecurityHeadersMiddleware)
 
 
 
@@ -194,7 +198,8 @@ async def general_exception_handler(request: Request, exc: Exception) -> JSONRes
 
 
 @app.get("/api/health")
-async def health_check() -> Dict[str, Any]:
+@limiter.limit("60/minute")
+async def health_check(request: Request) -> Dict[str, Any]:
     """
     Health check endpoint.
     
@@ -209,7 +214,8 @@ async def health_check() -> Dict[str, Any]:
 
 
 @app.get("/", include_in_schema=False)
-async def root() -> Dict[str, Any]:
+@limiter.limit("60/minute")
+async def root(request: Request) -> Dict[str, Any]:
     """
     Root endpoint that provides basic API information.
     
@@ -223,7 +229,8 @@ async def root() -> Dict[str, Any]:
     }
 
 @app.head("/", include_in_schema=False)
-async def root_head() -> None:
+@limiter.limit("60/minute")
+async def root_head(request: Request) -> None:
     """
     HEAD request handler for the root endpoint.
     Used by health checks.

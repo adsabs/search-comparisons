@@ -5,9 +5,11 @@ This module provides API endpoints for query intent interpretation and transform
 """
 import logging
 from typing import Dict, Any, Optional
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
+from ...core.rate_limiting import limiter, rate_limit_llm, rate_limit_health
+from ...core.logging import set_request_id, get_request_id, log_api_access
 from app.services.query_intent.service import QueryIntentService
 from app.services.query_intent.llm_service import LLMService
 from app.services.unified_cache_service import UnifiedCacheService
@@ -44,7 +46,8 @@ class QueryResponse(BaseModel):
     error: Optional[str] = None
 
 @router.post("/intent-transform-query", response_model=QueryResponse)
-async def transform_query(request: QueryRequest) -> QueryResponse:
+@limiter.limit("5/minute")
+async def transform_query(http_request: Request, request: QueryRequest) -> QueryResponse:
     """
     Transform a search query based on inferred intent.
     
@@ -75,7 +78,8 @@ async def transform_query(request: QueryRequest) -> QueryResponse:
         )
 
 @router.get("/health")
-async def health_check() -> Dict[str, Any]:
+@limiter.limit("60/minute")
+async def health_check(request: Request) -> Dict[str, Any]:
     """
     Check the health of the query intent service.
     

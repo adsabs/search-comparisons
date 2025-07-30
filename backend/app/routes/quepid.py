@@ -1,9 +1,11 @@
 """
 Quepid API routes for the search-comparisons application.
 """
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Request
 from typing import List, Dict, Any
 from ..services.quepid_service import QuepidService
+from ..core.rate_limiting import limiter, rate_limit_moderate
+from ..core.logging import set_request_id, get_request_id, log_api_access
 
 router = APIRouter(
     tags=["quepid"],
@@ -12,7 +14,9 @@ router = APIRouter(
 quepid_service = QuepidService()
 
 @router.get("/judgments/{case_id}")
+@limiter.limit("30/minute")
 async def get_judgments(
+    request: Request,
     case_id: int,
     query: str = Query(..., description="The search query to get judgments for")
 ) -> List[Dict[str, Any]]:
@@ -36,7 +40,9 @@ async def get_judgments(
         )
 
 @router.get("/documents")
+@limiter.limit("30/minute")
 async def get_judged_documents(
+    request: Request,
     case_id: int = Query(8914, description="The Quepid case ID"),
     query_text: str = Query("triton", description="The query text to match")
 ) -> List[Dict[str, Any]]:

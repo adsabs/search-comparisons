@@ -6,7 +6,7 @@ including the main comparison endpoint that handles searching across
 multiple engines and computing similarity metrics.
 """
 import logging
-from fastapi import APIRouter, HTTPException, BackgroundTasks
+from fastapi import APIRouter, HTTPException, BackgroundTasks, Request
 from typing import Dict, Any, Optional
 from pydantic import BaseModel
 
@@ -14,6 +14,13 @@ from ...api.models import SearchRequest, SearchResponse, SearchRequestWithBoosts
 from ...services.search_service import get_results_with_fallback, compare_results, SearchService
 from ...services.query_transformation import transform_query_with_boosts
 from ...services.boost_service import apply_all_boosts
+from ...core.rate_limiting import (
+    limiter, 
+    rate_limit_search, 
+    rate_limit_llm,
+    rate_limit_moderate
+)
+from ...core.logging import set_request_id, get_request_id, log_api_access
 
 # Create router
 router = APIRouter(
@@ -42,7 +49,9 @@ class SearchRequestWithBoosts(SearchRequest):
     boost_config: Optional[BoostConfig] = None
 
 @router.post("/search/compare")
+@limiter.limit("10/minute")
 async def compare_search_engines(
+    request: Request,
     search_request: SearchRequestWithBoosts
 ) -> Dict[str, Any]:
     """
@@ -173,7 +182,8 @@ async def compare_search_engines(
         raise HTTPException(status_code=500, detail=f"Error in search comparison: {str(e)}")
 
 @router.post("/search", response_model=SearchResponse)
-async def search(request: SearchRequestWithBoosts) -> SearchResponse:
+@limiter.limit("10/minute")
+async def search(request: Request, search_request: SearchRequestWithBoosts) -> SearchResponse:
     """Handle search requests.
 
     Args:
@@ -183,18 +193,18 @@ async def search(request: SearchRequestWithBoosts) -> SearchResponse:
         SearchResponse containing search results
     """
     try:
-        results = await search_service.search(request)
+        results = await search_service.search(search_request)
         
         # Apply boosts if configured
-        if request.boost_config:
+        if search_request.boost_config:
             # Create a boost config dictionary from the BoostConfig model
             boost_config = {
-                "citation_boost": request.boost_config.citation_boost,
-                "min_citations": request.boost_config.min_citations,
-                "recency_boost": request.boost_config.recency_boost,
-                "reference_year": request.boost_config.reference_year,
-                "doctype_boosts": request.boost_config.doctype_boosts,
-                "field_boosts": request.boost_config.field_boosts
+                "citation_boost": search_request.boost_config.citation_boost,
+                "min_citations": search_request.boost_config.min_citations,
+                "recency_boost": search_request.boost_config.recency_boost,
+                "reference_year": search_request.boost_config.reference_year,
+                "doctype_boosts": search_request.boost_config.doctype_boosts,
+                "field_boosts": search_request.boost_config.field_boosts
             }
             results = await apply_all_boosts(
                 results,
@@ -206,7 +216,8 @@ async def search(request: SearchRequestWithBoosts) -> SearchResponse:
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/transform-query", response_model=TransformQueryResponse)
-async def transform_query(request: TransformQueryRequest) -> TransformQueryResponse:
+@limiter.limit("5/minute")
+async def transform_query(http_request: Request, request: TransformQueryRequest) -> TransformQueryResponse:
     """Transform a query with field boosts.
 
     Args:
@@ -222,7 +233,9 @@ async def transform_query(request: TransformQueryRequest) -> TransformQueryRespo
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/compare")
+@limiter.limit("10/minute")
 async def compare_search_results(
+    http_request: Request,
     request: SearchRequest,
     background_tasks: BackgroundTasks
 ) -> SearchResponse:

@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 # API Constants
 QUEPID_API_URL = os.environ.get("QUEPID_API_URL", "https://quepid.herokuapp.com/api/")
-QUEPID_API_KEY = 'c707e3d691c5f681f31a05b4c68bb09fc402597f325213a2e6411beebf199405' # os.environ.get("QUEPID_API_KEY", "")
+QUEPID_API_KEY = os.environ.get("QUEPID_API_KEY", "")
 TIMEOUT_SECONDS = 30
 
 # User input: set these for your test

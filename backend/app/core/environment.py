@@ -74,10 +74,8 @@ def initialize_environment() -> bool:
         logger.info(f"ADS_API_KEY found! Length: {len(ads_api_key)}, Value (masked): {masked_key}")
     else:
         logger.error("ADS_API_KEY not found in environment!")
-        # Hard-code emergency fallback for testing
-        logger.warning("Setting emergency fallback ADS_API_KEY for testing only")
-        os.environ["ADS_API_KEY"] = "F6pHGICMXXy4aiAWBR4gaFL4Ta72xdM8jVhHDOsm"
-        logger.info("Emergency ADS_API_KEY set")
+        logger.error("Please set ADS_API_KEY in your environment or .env file")
+        # Do not set fallback credentials - require proper configuration
     
     return env_loaded
 

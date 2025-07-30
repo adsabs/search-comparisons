@@ -5,6 +5,8 @@ from typing import List
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
 
+from ..core.rate_limiting import limiter, rate_limit_moderate, rate_limit_batch
+from ..core.logging import set_request_id, get_request_id, log_api_access
 from app.api.schemas.judgement import (
     JudgementCreate,
     JudgementResponse,
@@ -19,7 +21,9 @@ router = APIRouter(prefix="/judgements", tags=["judgements"])
 
 
 @router.get("/query/all", response_model=List[JudgementResponse])
+@limiter.limit("30/minute")
 async def get_all_judgements(
+    request: Request,
     db: Session = Depends(get_db),
 ) -> List[JudgementResponse]:
     """Get all judgements in the database.
@@ -35,6 +39,7 @@ async def get_all_judgements(
 
 
 @router.post("", response_model=JudgementResponse)
+@limiter.limit("30/minute")
 async def create_judgement(
     judgement: JudgementCreate,
     request: Request,
@@ -66,6 +71,7 @@ async def create_judgement(
 
 
 @router.post("/batch", response_model=List[JudgementResponse])
+@limiter.limit("3/minute")
 async def create_judgements_batch(
     batch: JudgementBatchCreate,
     request: Request,
@@ -103,7 +109,9 @@ async def create_judgements_batch(
 
 
 @router.get("/query/{query}", response_model=List[JudgementResponse])
+@limiter.limit("30/minute")
 async def get_judgements_by_query(
+    request: Request,
     query: str,
     record_bibcode: str | None = None,
     db: Session = Depends(get_db),
@@ -123,7 +131,9 @@ async def get_judgements_by_query(
 
 
 @router.get("/stats/{query}", response_model=JudgementStats)
+@limiter.limit("30/minute")
 async def get_judgement_stats(
+    request: Request,
     query: str,
     db: Session = Depends(get_db),
 ) -> JudgementStats:
@@ -141,6 +151,7 @@ async def get_judgement_stats(
 
 
 @router.get("/rater", response_model=List[JudgementResponse])
+@limiter.limit("30/minute")
 async def get_my_judgements(
     request: Request,
     db: Session = Depends(get_db),

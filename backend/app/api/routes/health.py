@@ -4,15 +4,17 @@ Health check routes for the application.
 This module provides endpoints for monitoring the application's health and status.
 """
 from typing import Dict, Any
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
 from ..dependencies import get_db
 from ...core.config import settings
+from ...core.rate_limiting import limiter
 
 router = APIRouter()
 
 @router.get("/health")
-async def health_check(db: Session = Depends(get_db)) -> Dict[str, Any]:
+@limiter.limit("60/minute")
+async def health_check(request: Request, db: Session = Depends(get_db)) -> Dict[str, Any]:
     """
     Health check endpoint that verifies the application's status.
     
