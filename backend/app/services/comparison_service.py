@@ -9,7 +9,7 @@ from typing import Dict, List, Any, Set, Tuple
 from abc import ABC, abstractmethod
 
 from ..api.models import SearchResult
-from ..utils.text_processing import preprocess_text
+from ..utils.text_processing import preprocess_text, normalize_doi
 from ..utils.similarity import calculate_jaccard_similarity, calculate_rank_based_overlap, calculate_cosine_similarity
 
 logger = logging.getLogger(__name__)
@@ -97,7 +97,15 @@ class RankBasedOverlap(SimilarityMetric):
                 doi = doi[0] if doi else None
             
             if doi:
-                identifiers.append(doi)
+                canonical_doi = normalize_doi(doi)
+                if canonical_doi:
+                    identifiers.append(canonical_doi)
+                else:
+                    title = getattr(result, 'title', '')
+                    if isinstance(title, list):
+                        title = title[0] if title else ''
+                    if title:
+                        identifiers.append(preprocess_text(title))
             else:
                 title = getattr(result, 'title', '')
                 if isinstance(title, list):
@@ -227,8 +235,16 @@ class OverlapCalculator:
                 title = title[0] if title else ''
             
             if doi:
-                identifiers.add(doi)
-                results_with_doi[doi] = result
+                canonical_doi = normalize_doi(doi)
+                if canonical_doi:
+                    identifiers.add(canonical_doi)
+                    results_with_doi[canonical_doi] = result
+                else:
+                    # Fallback to title if DOI normalization fails
+                    processed_title = preprocess_text(title)
+                    if processed_title:
+                        identifiers.add(processed_title)
+                        results_no_doi[processed_title] = result
             else:
                 processed_title = preprocess_text(title)
                 if processed_title:
@@ -239,7 +255,7 @@ class OverlapCalculator:
     
     def _is_doi(self, identifier: str) -> bool:
         """Check if an identifier is a DOI."""
-        return identifier.startswith('10.') or '/' in identifier
+        return identifier.startswith('10.') and '/' in identifier
     
     def _calculate_same_rank_count(self, results1, results2, overlap_items, results1_with_doi, results1_no_doi, results2_with_doi, results2_no_doi) -> int:
         """
@@ -279,7 +295,13 @@ class OverlapCalculator:
                 title = title[0] if title else ''
             
             if doi:
-                position_map1[doi] = idx
+                canonical_doi = normalize_doi(doi)
+                if canonical_doi:
+                    position_map1[canonical_doi] = idx
+                else:
+                    processed_title = preprocess_text(title)
+                    if processed_title:
+                        position_map1[processed_title] = idx
             else:
                 processed_title = preprocess_text(title)
                 if processed_title:
@@ -301,7 +323,13 @@ class OverlapCalculator:
                 title = title[0] if title else ''
             
             if doi:
-                position_map2[doi] = idx
+                canonical_doi = normalize_doi(doi)
+                if canonical_doi:
+                    position_map2[canonical_doi] = idx
+                else:
+                    processed_title = preprocess_text(title)
+                    if processed_title:
+                        position_map2[processed_title] = idx
             else:
                 processed_title = preprocess_text(title)
                 if processed_title:

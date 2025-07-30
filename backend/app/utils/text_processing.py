@@ -18,6 +18,9 @@ logger = logging.getLogger(__name__)
 # Initialize stemmer
 stemmer = PorterStemmer()
 
+# DOI normalization regex
+DOI_PREFIX_RE = re.compile(r'^(https?://)?(dx\.)?doi\.org/', re.I)
+
 # Ensure NLTK resources are available
 try:
     nltk.data.find('tokenizers/punkt')
@@ -81,6 +84,39 @@ def stem_text(text: str) -> str:
     
     # Join stemmed tokens back into a string
     return " ".join(stemmed_tokens)
+
+
+def normalize_doi(doi: str) -> str:
+    """
+    Convert any DOI representation to canonical lowercase 10.xxxx/... form.
+    
+    Handles various DOI formats:
+    - https://doi.org/10.1000/xyz → 10.1000/xyz
+    - DOI:10.1000/xyz → 10.1000/xyz
+    - dx.doi.org/10.1000/xyz → 10.1000/xyz
+    
+    Args:
+        doi: DOI string in any format
+    
+    Returns:
+        str: Normalized DOI string or empty string if invalid
+    """
+    if not doi:
+        return ""
+    
+    doi = doi.strip().lower()
+    
+    # Remove URL prefixes
+    doi = DOI_PREFIX_RE.sub('', doi)
+    
+    # Remove "doi:" prefix
+    doi = doi.replace('doi:', '').strip()
+    
+    # Return only if it looks like a valid DOI
+    if doi.startswith('10.') and '/' in doi:
+        return doi
+    
+    return ""
 
 
 def preprocess_text(text: str, apply_stemming: bool = True) -> str:
