@@ -120,6 +120,45 @@ function App() {
     setExperimentTab(newValue);
   };
 
+  // Helper function to normalize titles for comparison
+  const normalizeTitle = (title) => {
+    if (!title) return '';
+    
+    // Convert to string if not already
+    const titleStr = String(title);
+    
+    // Remove special characters, extra spaces, lowercase everything
+    return titleStr.toLowerCase()
+      .replace(/[^\w\s]/g, '') // Remove special chars
+      .replace(/\s+/g, ' ')    // Replace multiple spaces with single space
+      .trim();
+  };
+
+  // Function to calculate title overlap between two result sets in top 10
+  const calculateTitleOverlap = (results1, results2) => {
+    if (!results1 || !results2 || results1.length === 0 || results2.length === 0) {
+      return 0;
+    }
+    
+    // Get top 10 titles from each result set and normalize them
+    const titles1 = results1.slice(0, 10)
+      .map(result => normalizeTitle(result.title))
+      .filter(title => title);
+    
+    const titles2 = results2.slice(0, 10)
+      .map(result => normalizeTitle(result.title))
+      .filter(title => title);
+    
+    // Create sets for intersection calculation
+    const titleSet1 = new Set(titles1);
+    const titleSet2 = new Set(titles2);
+    
+    // Calculate intersection (titles that appear in both sets)
+    const intersection = new Set([...titleSet1].filter(title => titleSet2.has(title)));
+    
+    return intersection.size;
+  };
+
   // Submit the search query
   const handleSearch = async () => {
     if (!query.trim()) {
@@ -158,6 +197,11 @@ function App() {
       if (response.error) {
         setError(response.message);
       } else {
+        console.log('Search results structure:', response);
+        console.log('Search results keys:', Object.keys(response));
+        if (response.results) {
+          console.log('Search results sources:', Object.keys(response.results));
+        }
         setResults(response);
       }
     } catch (err) {
@@ -860,24 +904,38 @@ function App() {
                                     </TableHead>
                                     <TableBody>
                                       {Object.entries(results.comparison.overlap).map(([key, stats]) => {
-                                        const [source1, source2] = key.split('_vs_');
-                                        const sourceNames = [formatSourceName(source1), formatSourceName(source2)];
-                                        const comparisonLabel = `${sourceNames[0]} vs ${sourceNames[1]}`;
-                                        
-                                        // Calculate metrics - backend returns pair_key[metric] not metric[pair_key]
-                                        const jaccardValue = results.comparison.similarity?.[key]?.jaccard;
-                                        const rankBiasedValue = results.comparison.similarity?.[key]?.rank_based_overlap;
-                                        
-                                        const doiMatches = stats.matching_dois?.length || 0;
-                                        const titleMatches = stats.all_matching_titles?.length || 0;
-                                        const sameRankCount = stats.same_rank_count || 0;
-                                        
-                                        return (
-                                          <TableRow key={key}>
-                                            <TableCell>{comparisonLabel}</TableCell>
-                                            <TableCell align="center">
-                                              <Chip 
-                                                label={stats.overlap}
+                                      const [source1, source2] = key.split('_vs_');
+                                      const sourceNames = [formatSourceName(source1), formatSourceName(source2)];
+                                      const comparisonLabel = `${sourceNames[0]} vs ${sourceNames[1]}`;
+                                      
+                                      // Calculate metrics - backend returns pair_key[metric] not metric[pair_key]
+                                      const jaccardValue = results.comparison.similarity?.[key]?.jaccard;
+                                      const rankBiasedValue = results.comparison.similarity?.[key]?.rank_based_overlap;
+                                      
+                                      const doiMatches = stats.matching_dois?.length || 0;
+                                      const titleMatches = stats.all_matching_titles?.length || 0;
+                                      const sameRankCount = stats.same_rank_count || 0;
+                                      
+                                      // Calculate frontend title overlap using our working logic
+                                      const results1 = results.results?.[source1] || [];
+                                      const results2 = results.results?.[source2] || [];
+                                      console.log(`Calculating overlap for ${source1} vs ${source2}:`, {
+                                           source1,
+                                           source2,
+                                           results1Length: results1.length,
+                                           results2Length: results2.length,
+                                           results1Sample: results1.slice(0, 2).map(r => r?.title),
+                                           results2Sample: results2.slice(0, 2).map(r => r?.title)
+                                         });
+                                         const frontendOverlap = calculateTitleOverlap(results1, results2);
+                                         console.log(`Frontend overlap result: ${frontendOverlap}`);
+                                      
+                                      return (
+                                           <TableRow key={key}>
+                                             <TableCell>{comparisonLabel}</TableCell>
+                                             <TableCell align="center">
+                                               <Chip 
+                                                 label={frontendOverlap}
                                                 size="small" 
                                                 color="success"
                                                 sx={{ fontWeight: 'bold' }}

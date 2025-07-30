@@ -1267,6 +1267,55 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
     updateJudgmentCounts();
   }, [localJudgments, searchResults, boostedResults, quepidResults, getJudgmentForTitle]);
 
+  // Function to calculate title overlap between two result sets in top 10
+  const calculateTitleOverlap = useCallback((results1, results2) => {
+    if (!results1 || !results2 || results1.length === 0 || results2.length === 0) {
+      console.log('calculateTitleOverlap: Missing or empty results', { 
+        results1Length: results1?.length, 
+        results2Length: results2?.length 
+      });
+      return 0;
+    }
+    
+    // Get top 10 titles from each result set and normalize them
+    const titles1 = results1.slice(0, 10)
+      .map(result => {
+        const normalized = normalizeTitle(result.title);
+        console.log('Title normalization set 1:', { original: result.title, normalized });
+        return normalized;
+      })
+      .filter(title => title);
+    
+    const titles2 = results2.slice(0, 10)
+      .map(result => {
+        const normalized = normalizeTitle(result.title);
+        console.log('Title normalization set 2:', { original: result.title, normalized });
+        return normalized;
+      })
+      .filter(title => title);
+    
+    console.log('Comparing title sets:', { 
+      titles1: titles1, 
+      titles2: titles2 
+    });
+    
+    // Create sets for intersection calculation
+    const titleSet1 = new Set(titles1);
+    const titleSet2 = new Set(titles2);
+    
+    // Calculate intersection (titles that appear in both sets)
+    const intersection = new Set([...titleSet1].filter(title => titleSet2.has(title)));
+    
+    console.log('Title overlap calculation result:', { 
+      titleSet1Size: titleSet1.size,
+      titleSet2Size: titleSet2.size,
+      intersectionSize: intersection.size,
+      intersectionTitles: [...intersection]
+    });
+    
+    return intersection.size;
+  }, []);
+
   // Function to render column header with NDCG score
   const renderColumnHeader = (title, subtitle, results, source) => {
     // Calculate NDCG@10 for the given results
@@ -1294,6 +1343,22 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
     }, { quepid: 0, manual: 0, total: 0 }) : { quepid: 0, manual: 0, total: 0 };
 
     console.log(`Final counts for ${source}:`, counts);
+
+    // Calculate title overlap with other engines (for comparison engines)
+    let titleOverlap = null;
+    console.log(`Title overlap calculation for source: ${source}`, {
+      searchResultsStructure: searchResults?.results ? Object.keys(searchResults.results) : 'No results',
+      resultsForThisSource: results?.length || 0,
+      adsResults: searchResults?.results?.ads?.length || 0
+    });
+    
+    if (source !== 'original' && source !== 'boosted') {
+      // For comparison engines, show overlap with original ADS results
+      titleOverlap = calculateTitleOverlap(results, searchResults?.results?.ads);
+    } else if (source === 'boosted') {
+      // For boosted results, show overlap with original ADS results
+      titleOverlap = calculateTitleOverlap(results, searchResults?.results?.ads);
+    }
 
     // Get all NDCG values for ranking
     const allNdcgValues = [
@@ -1353,22 +1418,32 @@ const BoostExperiment = ({ API_URL = DEFAULT_API_URL }) => {
             NDCG@10: {ndcg !== null ? ndcg.toFixed(3) : 'N/A'}
           </Typography>
           <Typography variant="caption" align="center" display="block" sx={{ 
-            color: source === 'original' ? 'text.secondary' : 'rgba(255,255,255,0.8)',
-            fontSize: '0.7rem',
-            fontWeight: counts.total > 0 ? 'bold' : 'normal'
+          color: source === 'original' ? 'text.secondary' : 'rgba(255,255,255,0.8)',
+          fontSize: '0.7rem',
+          fontWeight: counts.total > 0 ? 'bold' : 'normal'
           }}>
-            {counts.total > 0 ? (
-              <>
-                Total Judgments: {counts.total}
-                {counts.quepid > 0 && ` (Quepid: ${counts.quepid}`}
-                {counts.quepid > 0 && counts.manual > 0 && ' | '}
-                {counts.manual > 0 && `Manual: ${counts.manual}`}
-                {counts.quepid > 0 && ')'}
-              </>
-            ) : (
-              'No judgments'
-            )}
+          {counts.total > 0 ? (
+          <>
+          Total Judgments: {counts.total}
+          {counts.quepid > 0 && ` (Quepid: ${counts.quepid}`}
+          {counts.quepid > 0 && counts.manual > 0 && ' | '}
+          {counts.manual > 0 && `Manual: ${counts.manual}`}
+          {counts.quepid > 0 && ')'}
+          </>
+          ) : (
+          'No judgments'
+          )}
           </Typography>
+           {titleOverlap !== null && (
+             <Typography variant="caption" align="center" display="block" sx={{ 
+               color: source === 'original' ? 'text.secondary' : 'rgba(255,255,255,0.8)',
+               fontSize: '0.7rem',
+               fontWeight: 'bold',
+               mt: 0.25
+             }}>
+               Title Overlap: {titleOverlap}/10
+             </Typography>
+           )}
         </Box>
       </Paper>
     );
